@@ -8,11 +8,10 @@
   ],
   "dependencies": {
     "purescript-prelude": "^3.1.0",
-    "purescript-console": "^3.0.0"
+    "purescript-node-fs-aff": "^4.0.0"
   },
   "devDependencies": {
-    "purescript-psci-support": "^3.0.0",
-    "purescript-web3": "https://github.com/f-o-a-m/purescript-web3.git#096e7bcceb70510b06f5d593587a2b2ea6451526"
+    "purescript-web3-generator": "git+https://github.com/f-o-a-m/purescript-web3-generator#5cf493f14d566886cc0e073e7a2dabfe6e22e456"
   },
   "resolutions": {
     "purescript-web3": "096e7bcceb70510b06f5d593587a2b2ea6451526"
