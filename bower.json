@@ -18,9 +18,6 @@
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
-    "purescript-web3": "https://github.com/f-o-a-m/purescript-web3.git#63834b9a71404f8a8774f58ee54a0e455ad9fd31"
-  },
-  "resolutions": {
-    "purescript-web3": "096e7bcceb70510b06f5d593587a2b2ea6451526"
+    "purescript-web3": "../purescript-web3#testing"
   }
 }

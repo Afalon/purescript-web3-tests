@@ -15,6 +15,7 @@
   "dependencies": {
     "bignumber.js": "git+https://github.com/frozeman/bignumber.js-nolookahead.git",
     "crypto-js": "^3.1.8",
-    "pulp": "^11.0.2"
+    "pulp": "^11.0.2",
+    "web3": "^0.19.1"
   }
 }
