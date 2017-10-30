@@ -1,0 +1,22 @@
+{
+  "name": "purescript-web3-tests",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "output"
+  ],
+  "dependencies": {
+    "purescript-prelude": "^3.1.0",
+    "purescript-console": "^3.0.0",
+    "purescript-spec": "^2.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "^3.0.0",
+    "purescript-web3-generator": "git+https://github.com/f-o-a-m/purescript-web3-generator#109db2754dfca83f26c3066c16a36314bb6a5e71",
+    "purescript-web3": "https://github.com/f-o-a-m/purescript-web3.git#096e7bcceb70510b06f5d593587a2b2ea6451526"
+  },
+  "resolutions": {
+    "purescript-web3": "096e7bcceb70510b06f5d593587a2b2ea6451526"
+  }
+}
