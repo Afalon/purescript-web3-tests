@@ -2,10 +2,9 @@ module Contracts.SimpleStorage where
 
 import Prelude
 import Data.Monoid (mempty)
-import Data.Lens ((.~))
 import Text.Parsing.Parser (fail)
 import Data.Maybe (Maybe(..))
-import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3MA, BigNumber, _address, _topics, _fromBlock, _toBlock, defaultFilter)
+import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3MA, BigNumber, Filter(..))
 import Network.Ethereum.Web3.Contract (class EventFilter, callAsync, sendTxAsync)
 import Network.Ethereum.Web3.Solidity
 --------------------------------------------------------------------------------
@@ -45,8 +44,9 @@ instance abiEncodingCountSet :: ABIEncoding CountSet where
 	fromDataParser = uncurry1 CountSet <$> fromDataParser
 
 instance eventFilterCountSet :: EventFilter CountSet where
-	eventFilter _ addr = defaultFilter
-		# _address .~ Just addr
-		# _topics .~ Just [Just (HexString "a32bc18230dd172221ac5c4821a5f1f1a831f27b1396d244cdd891c58f132435")]
-		# _fromBlock .~ Nothing
-		# _toBlock .~ Nothing
+	eventFilter _ addr = Filter
+		{ address: Just addr
+		, topics: Just [Just (HexString "a32bc18230dd172221ac5c4821a5f1f1a831f27b1396d244cdd891c58f132435")]
+		, fromBlock: Nothing
+		, toBlock: Nothing
+		}

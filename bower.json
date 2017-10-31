@@ -9,18 +9,18 @@
   "dependencies": {
     "purescript-prelude": "^3.1.0",
     "purescript-console": "^3.0.0",
-    "purescript-node-fs-aff": "^4.0.0",
+    "purescript-node-fs-aff": "^5.0.0",
     "purescript-profunctor-lenses": "^3.7.0",
     "purescript-argonaut": "^3.1.0",
     "purescript-errors": "^3.0.0",
     "purescript-debug": "^3.0.0",
     "purescript-node-process": "^5.0.0",
-    "purescript-symbols": "^3.0.0",
-    "purescript-spec": "1.0.0"
+    "purescript-symbols": "^3.0.0"
   },
   "devDependencies": {
+    "purescript-spec": "2.0.0",
     "purescript-psci-support": "^3.0.0",
-    "purescript-web3": "git+https://github.com/f-o-a-m/purescript-web3#9c00ee1f12e9855ed41378641d10d49a372875ec"
+    "purescript-web3": "git+https://github.com/f-o-a-m/purescript-web3#a4d71e9aa7fb189167c54579312d5f462504f02a"
   },
   "resolutions": {
     "purescript-node-process": "^5.0.0"

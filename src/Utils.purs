@@ -7,12 +7,11 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Control.Monad.Except (runExcept)
+import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Argonaut.Prisms (_Object, _String)
 import Data.Either (either)
 import Data.EitherR (fmapL)
-import Data.Foreign (renderForeignError)
-import Data.Foreign.Class (decode, encode)
 import Data.Lens ((^?))
 import Data.Lens.Index (ix)
 import Data.Maybe (maybe)
@@ -48,8 +47,8 @@ getDeployedContract p sproxy = do
     contractJson <- ejson
     networks <- note "artifact missing networks key" $ contractJson ^? _Object <<< ix "networks"
     net <- note ("artifact missing network: " <> show nodeId)  $ networks ^? _Object <<< ix (show nodeId)
-    addr <- note "artifact has no address" $ net ^? _Object <<< ix "address" <<< _String
-    fmapL (show <<< map renderForeignError) <<< runExcept <<< decode <<< encode $ addr
+    addr <- note "artifact has no address" $ net ^? _Object <<< ix "address"
+    decodeJson $ addr
   pure $ Contract { address: addr
                   }
 
