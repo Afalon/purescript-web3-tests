@@ -1,17 +1,14 @@
 module Utils where
 
-import Data.Symbol
 import Prelude
-
 import Control.Error.Util (note)
 import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Exception (EXCEPTION, throwException, error, throw)
+import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Control.Monad.Except (runExcept)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Argonaut.Prisms (_Object, _String)
-import Data.Either (Either)
 import Data.Either (either)
 import Data.EitherR (fmapL)
 import Data.Foreign (renderForeignError)
@@ -19,9 +16,10 @@ import Data.Foreign.Class (decode, encode)
 import Data.Lens ((^?))
 import Data.Lens.Index (ix)
 import Data.Maybe (maybe)
+import Data.Symbol (class IsSymbol, SProxy, reflectSymbol)
 import Network.Ethereum.Web3.Api (net_version)
 import Network.Ethereum.Web3.Provider (httpProvider)
-import Network.Ethereum.Web3.Types (Address(..), ETH, Provider, runWeb3MA)
+import Network.Ethereum.Web3.Types (Address, ETH, Provider, runWeb3MA)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
@@ -39,10 +37,10 @@ newtype Contract (name :: Symbol) =
 
 getDeployedContract :: forall eff name .
                        IsSymbol name
-                    => SProxy name
-                    -> Provider
+                    => Provider
+                    -> SProxy name
                     -> Aff (fs :: FS, eth :: ETH, exception :: EXCEPTION | eff) (Contract name)
-getDeployedContract sproxy p = do
+getDeployedContract p sproxy = do
   let fname = "./build/contracts/" <> reflectSymbol sproxy <> ".json"
   nodeId <- runWeb3MA p net_version
   ejson <- jsonParser <$> readTextFile UTF8 fname
@@ -54,6 +52,7 @@ getDeployedContract sproxy p = do
     fmapL (show <<< map renderForeignError) <<< runExcept <<< decode <<< encode $ addr
   pure $ Contract { address: addr
                   }
+
 
 {-
 foo = void <<< launchAff $ do

@@ -15,7 +15,8 @@
     "purescript-errors": "^3.0.0",
     "purescript-debug": "^3.0.0",
     "purescript-node-process": "^5.0.0",
-    "purescript-symbols": "^3.0.0"
+    "purescript-symbols": "^3.0.0",
+    "purescript-spec": "1.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
