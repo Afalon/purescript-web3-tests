@@ -44,4 +44,4 @@ simpleStorageSpec =
           _ <- liftAff $ putVar var _count
           pure TerminateEvent
       val <- takeVar var
-      Just n `shouldEqual` Just n
+      Just val `shouldEqual` Just n

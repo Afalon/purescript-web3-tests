@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
-    "purescript-web3": "../purescript-web3#testing"
+    "purescript-web3": "../purescript-web#92a5f0cf7859e912b172cda3d693538191ec69a6"
   },
   "resolutions": {
     "purescript-node-process": "^5.0.0"
