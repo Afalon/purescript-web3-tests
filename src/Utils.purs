@@ -1,5 +1,7 @@
 module Utils where
 
+import Data.Foreign (renderForeignError)
+import Data.Foreign.Class (decode, encode)
 import Prelude
 import Control.Error.Util (note)
 import Control.Monad.Aff (Aff)
@@ -23,9 +25,11 @@ import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
 --import Control.Monad.Eff.Console (logShow)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 
-makeProvider :: forall eff . Eff (process :: PROCESS, eth :: ETH, exception :: EXCEPTION | eff) Provider
-makeProvider = do
+
+makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
+makeProvider = unsafeCoerceEff $ do
   murl <- lookupEnv "NODE_URL"
   url <- maybe (throw "Must provide node url") pure murl
   httpProvider url
@@ -47,8 +51,8 @@ getDeployedContract p sproxy = do
     contractJson <- ejson
     networks <- note "artifact missing networks key" $ contractJson ^? _Object <<< ix "networks"
     net <- note ("artifact missing network: " <> show nodeId)  $ networks ^? _Object <<< ix (show nodeId)
-    addr <- note "artifact has no address" $ net ^? _Object <<< ix "address"
-    decodeJson $ addr
+    addr <- note "artifact has no address" $ net ^? _Object <<< ix "address" <<< _String
+    fmapL (show <<< map renderForeignError) <<< runExcept <<< decode <<< encode $ addr
   pure $ Contract { address: addr
                   }
 

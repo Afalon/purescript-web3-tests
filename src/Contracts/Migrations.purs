@@ -2,9 +2,10 @@ module Contracts.Migrations where
 
 import Prelude
 import Data.Monoid (mempty)
+import Data.Lens ((.~))
 import Text.Parsing.Parser (fail)
 import Data.Maybe (Maybe(..))
-import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3MA, BigNumber, Filter(..))
+import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3MA, BigNumber, _address, _topics, _fromBlock, _toBlock, defaultFilter)
 import Network.Ethereum.Web3.Contract (class EventFilter, callAsync, sendTxAsync)
 import Network.Ethereum.Web3.Solidity
 --------------------------------------------------------------------------------

@@ -11,9 +11,6 @@
     "purescript-node-fs-aff": "^4.0.0"
   },
   "devDependencies": {
-    "purescript-web3-generator": "git+https://github.com/f-o-a-m/purescript-web3-generator#691d3a3e726abab8636ecb1cf6249742e9a0c2c5"
-  },
-  "resolutions": {
-    "purescript-web3": "13b4e1943e67d756d1e704990845b57a3e59fea0"
+    "purescript-web3-generator": "git+https://github.com/f-o-a-m/purescript-web3-generator#fa1fe1d3e322ff6a3889117a541e751d434fe6cb"
   }
 }

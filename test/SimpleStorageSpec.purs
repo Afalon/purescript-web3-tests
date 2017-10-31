@@ -6,7 +6,7 @@ import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Eff (Eff)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Aff (launchAff)
-import Control.Monad.Aff.AVar (AVAR, makeVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, logShow)
 import Node.FS.Aff (FS)
@@ -33,7 +33,7 @@ simpleStorageSpec =
       provider <- liftEff makeProvider
       accounts <- runWeb3MA provider eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
-      var <- makeVar
+      var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract provider (SProxy :: SProxy "SimpleStorage")
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
       hx <- runWeb3MA provider $
@@ -41,7 +41,7 @@ simpleStorageSpec =
       _ <- forkWeb3MA provider $
         event provider simpleStorage.address $ \(SimpleStorage.CountSet _count) -> do
           liftEff $ logShow (_count)
-          _ <- liftAff $ putVar var _count
+          _ <- liftAff $ putVar _count var
           pure TerminateEvent
       val <- takeVar var
       Just val `shouldEqual` Just n
