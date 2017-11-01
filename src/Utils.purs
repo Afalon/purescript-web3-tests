@@ -1,11 +1,13 @@
 module Utils where
 
 import Prelude
+
 import Control.Error.Util (note)
-import Control.Monad.Aff (Aff)
+import Control.Monad.Aff (Aff, liftEff')
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
+import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except (runExcept)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Argonaut.Prisms (_Object, _String)
@@ -18,18 +20,23 @@ import Data.Lens.Index (ix)
 import Data.Maybe (maybe)
 import Data.Symbol (class IsSymbol, SProxy, reflectSymbol)
 import Network.Ethereum.Web3.Api (net_version)
-import Network.Ethereum.Web3.Provider (httpProvider)
-import Network.Ethereum.Web3.Types (Address, ETH, Provider, runWeb3MA)
+import Network.Ethereum.Web3.Provider (class IsAsyncProvider, Provider, httpProvider, runWeb3)
+import Network.Ethereum.Web3.Types (Address, ETH, Web3(..))
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
---import Control.Monad.Eff.Console (logShow)
 
-makeProvider :: forall eff . Eff (process :: PROCESS, eth :: ETH, exception :: EXCEPTION | eff) Provider
-makeProvider = do
+
+makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
+makeProvider = unsafeCoerceEff $ do
   murl <- lookupEnv "NODE_URL"
   url <- maybe (throw "Must provide node url") pure murl
   httpProvider url
+
+data HttpProvider
+
+instance providerHttp :: IsAsyncProvider HttpProvider where
+  getAsyncProvider = Web3 <<< liftEff' $ makeProvider
 
 newtype Contract (name :: Symbol) =
   Contract { address :: Address
@@ -37,12 +44,11 @@ newtype Contract (name :: Symbol) =
 
 getDeployedContract :: forall eff name .
                        IsSymbol name
-                    => Provider
-                    -> SProxy name
+                    => SProxy name
                     -> Aff (fs :: FS, eth :: ETH, exception :: EXCEPTION | eff) (Contract name)
-getDeployedContract p sproxy = do
+getDeployedContract sproxy = do
   let fname = "./build/contracts/" <> reflectSymbol sproxy <> ".json"
-  nodeId <- runWeb3MA p net_version
+  nodeId <- runWeb3 (net_version :: Web3 HttpProvider _ _)
   ejson <- jsonParser <$> readTextFile UTF8 fname
   addr <- liftEff $ either throw pure $ do
     contractJson <- ejson
