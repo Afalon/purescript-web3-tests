@@ -8,9 +8,10 @@
   ],
   "dependencies": {
     "purescript-prelude": "^3.1.0",
-    "purescript-node-fs-aff": "^4.0.0"
+    "purescript-node-fs-aff": "^5.0.0"
   },
   "devDependencies": {
-    "purescript-web3-generator": "git+https://github.com/f-o-a-m/purescript-web3-generator#fa1fe1d3e322ff6a3889117a541e751d434fe6cb"
+    "purescript-web3-generator": "../../purescript-web3-generator#upgradeS",
+    "purescript-web3": "../../purescript-web3#upgradeS"
   }
 }
