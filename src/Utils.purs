@@ -9,7 +9,6 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
 import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except (runExcept)
-import Data.Argonaut (decodeJson)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Argonaut.Prisms (_Object, _String)
 import Data.Either (either)
@@ -21,8 +20,8 @@ import Data.Lens.Index (ix)
 import Data.Maybe (maybe)
 import Data.Symbol (class IsSymbol, SProxy, reflectSymbol)
 import Network.Ethereum.Web3.Api (net_version)
-import Network.Ethereum.Web3.Provider (class IsAsyncProvider, HttpProvider, Provider, getAsyncProvider, httpProvider, runWeb3MA)
-import Network.Ethereum.Web3.Types (Address, ETH, Web3MA(..))
+import Network.Ethereum.Web3.Provider (class IsAsyncProvider, Provider, httpProvider, runWeb3)
+import Network.Ethereum.Web3.Types (Address, ETH, Web3(..))
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
@@ -34,10 +33,10 @@ makeProvider = unsafeCoerceEff $ do
   url <- maybe (throw "Must provide node url") pure murl
   httpProvider url
 
-data HttpProvider'
+data HttpProvider
 
-instance providerHttp :: IsAsyncProvider HttpProvider' where
-  getAsyncProvider = Web3MA <<< liftEff' $ makeProvider
+instance providerHttp :: IsAsyncProvider HttpProvider where
+  getAsyncProvider = Web3 <<< liftEff' $ makeProvider
 
 newtype Contract (name :: Symbol) =
   Contract { address :: Address
@@ -49,7 +48,7 @@ getDeployedContract :: forall eff name .
                     -> Aff (fs :: FS, eth :: ETH, exception :: EXCEPTION | eff) (Contract name)
 getDeployedContract sproxy = do
   let fname = "./build/contracts/" <> reflectSymbol sproxy <> ".json"
-  nodeId <- runWeb3MA (net_version :: Web3MA HttpProvider' _ _)
+  nodeId <- runWeb3 (net_version :: Web3 HttpProvider _ _)
   ejson <- jsonParser <$> readTextFile UTF8 fname
   addr <- liftEff $ either throw pure $ do
     contractJson <- ejson

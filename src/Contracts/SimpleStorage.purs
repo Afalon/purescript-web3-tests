@@ -5,9 +5,9 @@ import Data.Monoid (mempty)
 import Data.Lens ((.~))
 import Text.Parsing.Parser (fail)
 import Data.Maybe (Maybe(..))
-import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3MA, BigNumber, _address, _topics, _fromBlock, _toBlock, defaultFilter)
+import Network.Ethereum.Web3.Types (HexString(..), CallMode, Web3, BigNumber, _address, _topics, _fromBlock, _toBlock, defaultFilter)
 import Network.Ethereum.Web3.Provider (class IsAsyncProvider)
-import Network.Ethereum.Web3.Contract (class EventFilter, callAsync, sendTxAsync)
+import Network.Ethereum.Web3.Contract (class EventFilter, call, sendTx)
 import Network.Ethereum.Web3.Solidity
 --------------------------------------------------------------------------------
 -- | CountFn
@@ -19,8 +19,8 @@ instance abiEncodingCountFn :: ABIEncoding CountFn where
 	toDataBuilder CountFn = HexString "06661abd"
 	fromDataParser = fail "Function type has no parser."
 
-count :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3MA p e (UIntN (D2 :& D5 :& D6))
-count x0 x1 x2 = unSingleton <$> callAsync x0 x1 x2 CountFn
+count :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e (UIntN (D2 :& D5 :& D6))
+count x0 x1 x2 = unSingleton <$> call x0 x1 x2 CountFn
 
 --------------------------------------------------------------------------------
 -- | SetCountFn
@@ -32,8 +32,8 @@ instance abiEncodingSetCountFn :: ABIEncoding SetCountFn where
 	toDataBuilder (SetCountFn x0) = HexString "d14e62b8" <> toDataBuilder (Singleton x0)
 	fromDataParser = fail "Function type has no parser."
 
-setCount :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3MA p e HexString
-setCount x0 x1 x2 x3 = sendTxAsync x0 x1 x2 (SetCountFn x3)
+setCount :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3 p e HexString
+setCount x0 x1 x2 x3 = sendTx x0 x1 x2 (SetCountFn x3)
 
 --------------------------------------------------------------------------------
 -- | CountSet
