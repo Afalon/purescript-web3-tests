@@ -10,30 +10,30 @@ import Network.Ethereum.Web3.Provider (class IsAsyncProvider)
 import Network.Ethereum.Web3.Contract (class EventFilter, call, sendTx)
 import Network.Ethereum.Web3.Solidity
 --------------------------------------------------------------------------------
--- | CountFn
+-- | EthcountFn
 --------------------------------------------------------------------------------
 
-data CountFn = CountFn 
+data EthcountFn = EthcountFn 
 
-instance abiEncodingCountFn :: ABIEncoding CountFn where
-	toDataBuilder CountFn = HexString "06661abd"
+instance abiEncodingEthcountFn :: ABIEncoding EthcountFn where
+	toDataBuilder EthcountFn = HexString "06661abd"
 	fromDataParser = fail "Function type has no parser."
 
-count :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e (UIntN (D2 :& D5 :& D6))
-count x0 x1 x2 = unSingleton <$> call x0 x1 x2 CountFn
+ethcount :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e (UIntN (D2 :& D5 :& D6))
+ethcount x0 x1 x2 = unSingleton <$> call x0 x1 x2 EthcountFn
 
 --------------------------------------------------------------------------------
--- | SetCountFn
+-- | EthsetCountFn
 --------------------------------------------------------------------------------
 
-data SetCountFn = SetCountFn (UIntN (D2 :& D5 :& D6))
+data EthsetCountFn = EthsetCountFn (UIntN (D2 :& D5 :& D6))
 
-instance abiEncodingSetCountFn :: ABIEncoding SetCountFn where
-	toDataBuilder (SetCountFn x0) = HexString "d14e62b8" <> toDataBuilder (Singleton x0)
+instance abiEncodingEthsetCountFn :: ABIEncoding EthsetCountFn where
+	toDataBuilder (EthsetCountFn x0) = HexString "d14e62b8" <> toDataBuilder (Singleton x0)
 	fromDataParser = fail "Function type has no parser."
 
-setCount :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3 p e HexString
-setCount x0 x1 x2 x3 = sendTx x0 x1 x2 (SetCountFn x3)
+ethsetCount :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3 p e HexString
+ethsetCount x0 x1 x2 x3 = sendTx x0 x1 x2 (EthsetCountFn x3)
 
 --------------------------------------------------------------------------------
 -- | CountSet

@@ -8,15 +8,15 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generator": "cd generator && npm i && pulp run -- --abis ../build/contracts --dest ../src --truffle",
-    "bower": "./node_modules/.bin/bower --quiet cache clean && ./node_modules/.bin/bower --quiet install",
-    "postinstall": "npm run generator && npm run bower"
+    "psc-package": "psc-package update",
+    "postinstall": "npm run psc-package && pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true && rm generator.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bignumber.js": "git+https://github.com/frozeman/bignumber.js-nolookahead.git",
     "crypto-js": "^3.1.8",
-    "pulp": "^11.0.2"
+    "pulp": "^12.0.0",
+    "yargs": "^8.0.2"
   }
 }
