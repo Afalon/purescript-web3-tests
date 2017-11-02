@@ -32,7 +32,7 @@ simpleStorageSpec =
   describe "interacting with a SimpleStorage Contract" do
 
     it "can set the value of simple storage" $ do
-      accounts <- runWeb3 (eth_getAccounts  :: Web3 HttpProvider _ _)
+      accounts <- runWeb3 (eth_getAccounts :: Web3 HttpProvider _ _)
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")

@@ -20,6 +20,7 @@ main =
              <> defaultHelp
     in runY setup $ go <$> yarg "abis" [] Nothing (Right "Must specify abi source directory.") true
                        <*> yarg "dest" [] Nothing (Left "./src") false
+                       <*> yarg "prefix" [] Nothing (Left "") false
                        <*> flag "truffle" [] (Just "Are the abi files truffle artifacts")
   where
-    go abiDir destDir tr = void <<< launchAff $ generatePS {jsonDir : abiDir, pursDir : destDir, truffle: tr}
+    go abiDir destDir p tr = void <<< launchAff $ generatePS {jsonDir : abiDir, pursDir : destDir, truffle: tr, prefix: p}

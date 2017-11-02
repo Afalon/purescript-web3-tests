@@ -10,54 +10,54 @@ import Network.Ethereum.Web3.Provider (class IsAsyncProvider)
 import Network.Ethereum.Web3.Contract (class EventFilter, call, sendTx)
 import Network.Ethereum.Web3.Solidity
 --------------------------------------------------------------------------------
--- | EthupgradeFn
+-- | UpgradeFn
 --------------------------------------------------------------------------------
 
-data EthupgradeFn = EthupgradeFn Address
+data UpgradeFn = UpgradeFn Address
 
-instance abiEncodingEthupgradeFn :: ABIEncoding EthupgradeFn where
-	toDataBuilder (EthupgradeFn x0) = HexString "0900f010" <> toDataBuilder (Singleton x0)
+instance abiEncodingUpgradeFn :: ABIEncoding UpgradeFn where
+	toDataBuilder (UpgradeFn x0) = HexString "0900f010" <> toDataBuilder (Singleton x0)
 	fromDataParser = fail "Function type has no parser."
 
-ethupgrade :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> Address -> Web3 p e HexString
-ethupgrade x0 x1 x2 x3 = sendTx x0 x1 x2 (EthupgradeFn x3)
+upgrade :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> Address -> Web3 p e HexString
+upgrade x0 x1 x2 x3 = sendTx x0 x1 x2 (UpgradeFn x3)
 
 --------------------------------------------------------------------------------
--- | Ethlast_completed_migrationFn
+-- | Last_completed_migrationFn
 --------------------------------------------------------------------------------
 
-data Ethlast_completed_migrationFn = Ethlast_completed_migrationFn 
+data Last_completed_migrationFn = Last_completed_migrationFn 
 
-instance abiEncodingEthlast_completed_migrationFn :: ABIEncoding Ethlast_completed_migrationFn where
-	toDataBuilder Ethlast_completed_migrationFn = HexString "445df0ac"
+instance abiEncodingLast_completed_migrationFn :: ABIEncoding Last_completed_migrationFn where
+	toDataBuilder Last_completed_migrationFn = HexString "445df0ac"
 	fromDataParser = fail "Function type has no parser."
 
-ethlast_completed_migration :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e (UIntN (D2 :& D5 :& D6))
-ethlast_completed_migration x0 x1 x2 = unSingleton <$> call x0 x1 x2 Ethlast_completed_migrationFn
+last_completed_migration :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e (UIntN (D2 :& D5 :& D6))
+last_completed_migration x0 x1 x2 = unSingleton <$> call x0 x1 x2 Last_completed_migrationFn
 
 --------------------------------------------------------------------------------
--- | EthownerFn
+-- | OwnerFn
 --------------------------------------------------------------------------------
 
-data EthownerFn = EthownerFn 
+data OwnerFn = OwnerFn 
 
-instance abiEncodingEthownerFn :: ABIEncoding EthownerFn where
-	toDataBuilder EthownerFn = HexString "8da5cb5b"
+instance abiEncodingOwnerFn :: ABIEncoding OwnerFn where
+	toDataBuilder OwnerFn = HexString "8da5cb5b"
 	fromDataParser = fail "Function type has no parser."
 
-ethowner :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e Address
-ethowner x0 x1 x2 = unSingleton <$> call x0 x1 x2 EthownerFn
+owner :: forall p e . IsAsyncProvider p => Address -> Maybe Address -> CallMode -> Web3 p e Address
+owner x0 x1 x2 = unSingleton <$> call x0 x1 x2 OwnerFn
 
 --------------------------------------------------------------------------------
--- | EthsetCompletedFn
+-- | SetCompletedFn
 --------------------------------------------------------------------------------
 
-data EthsetCompletedFn = EthsetCompletedFn (UIntN (D2 :& D5 :& D6))
+data SetCompletedFn = SetCompletedFn (UIntN (D2 :& D5 :& D6))
 
-instance abiEncodingEthsetCompletedFn :: ABIEncoding EthsetCompletedFn where
-	toDataBuilder (EthsetCompletedFn x0) = HexString "fdacd576" <> toDataBuilder (Singleton x0)
+instance abiEncodingSetCompletedFn :: ABIEncoding SetCompletedFn where
+	toDataBuilder (SetCompletedFn x0) = HexString "fdacd576" <> toDataBuilder (Singleton x0)
 	fromDataParser = fail "Function type has no parser."
 
-ethsetCompleted :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3 p e HexString
-ethsetCompleted x0 x1 x2 x3 = sendTx x0 x1 x2 (EthsetCompletedFn x3)
+setCompleted :: forall p e . IsAsyncProvider p => Maybe Address -> Address -> BigNumber -> (UIntN (D2 :& D5 :& D6)) -> Web3 p e HexString
+setCompleted x0 x1 x2 x3 = sendTx x0 x1 x2 (SetCompletedFn x3)
 
