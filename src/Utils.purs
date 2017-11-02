@@ -30,7 +30,7 @@ import Node.Process (PROCESS, lookupEnv)
 makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
 makeProvider = unsafeCoerceEff $ do
   murl <- lookupEnv "NODE_URL"
-  url <- maybe (throw "Must provide node url") pure murl
+  url <- maybe (pure "http://localhost:8545") pure murl
   httpProvider url
 
 data HttpProvider
@@ -59,11 +59,3 @@ getDeployedContract sproxy = do
   pure $ Contract { address: addr
                   }
 
-
-{-
-foo = void <<< launchAff $ do
-  p <- liftEff makeProvider
-  r <- getDeployedAddress p "SimpleStorage"
-  liftEff $ logShow r
-  pure r
--}
