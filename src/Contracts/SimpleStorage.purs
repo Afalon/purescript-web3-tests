@@ -1,6 +1,9 @@
 module Contracts.SimpleStorage where
 
 import Prelude
+import Data.Generic.Rep as G
+import Data.Generic.Rep.Eq as GEq
+import Data.Generic.Rep.Show as GShow
 import Data.Monoid (mempty)
 import Data.Lens ((.~))
 import Text.Parsing.Parser (fail)
@@ -51,3 +54,11 @@ instance eventFilterCountSet :: EventFilter CountSet where
 		# _topics .~ Just [Just (HexString "a32bc18230dd172221ac5c4821a5f1f1a831f27b1396d244cdd891c58f132435")]
 		# _fromBlock .~ Nothing
 		# _toBlock .~ Nothing
+
+derive instance genericCountSet :: G.Generic CountSet _
+
+instance eventGenericCountSetShow :: Show CountSet where
+	show = GShow.genericShow
+
+instance eventGenericCountSeteq :: Eq CountSet where
+	eq = GEq.genericEq

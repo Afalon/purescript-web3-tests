@@ -1,6 +1,9 @@
 module Contracts.Migrations where
 
 import Prelude
+import Data.Generic.Rep as G
+import Data.Generic.Rep.Eq as GEq
+import Data.Generic.Rep.Show as GShow
 import Data.Monoid (mempty)
 import Data.Lens ((.~))
 import Text.Parsing.Parser (fail)

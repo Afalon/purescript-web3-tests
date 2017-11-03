@@ -8,7 +8,7 @@ import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, logShow)
+import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Reader (ReaderT)
 import Data.Array ((!!))
@@ -39,8 +39,8 @@ simpleStorageSpec =
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
       hx <- runWeb3 $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount (embed 0) n :: Web3 HttpProvider _ _
       _ <- liftAff $ runWeb3 $
-        event simpleStorage.address $ \(SimpleStorage.CountSet _count) -> do
-          liftEff $ logShow (_count)
+        event simpleStorage.address $ \e@(SimpleStorage.CountSet _count) -> do
+          liftEff $ log $ "Generic show for event: " <> show e
           _ <- liftAff $ putVar _count var
           liftEff $ logShow $ "Put count: " <> show _count
           pure TerminateEvent :: ReaderT _ (Web3 HttpProvider _) _
