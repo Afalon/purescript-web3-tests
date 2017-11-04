@@ -16,6 +16,7 @@
         "psci-support",
         "yargs",
         "web3",
-        "web3-generator"
+        "web3-generator",
+        "string-parsers"
     ]
 }
