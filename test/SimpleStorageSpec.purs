@@ -18,7 +18,7 @@ import Network.Ethereum.Web3.Api (eth_getAccounts)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
 import Network.Ethereum.Web3.Provider (forkWeb3, runWeb3)
 import Network.Ethereum.Web3.Solidity (uIntNFromBigNumber)
-import Network.Ethereum.Web3.Types (ETH, Web3(..), embed)
+import Network.Ethereum.Web3.Types (ETH, Web3(..), Value, Wei, embed)
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
@@ -37,7 +37,7 @@ simpleStorageSpec =
       var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
-      hx <- runWeb3 $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount (embed 0) n :: Web3 HttpProvider _ _
+      hx <- runWeb3 $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount (zero :: Value Wei) n :: Web3 HttpProvider _ _
       _ <- liftAff $ runWeb3 $
         event simpleStorage.address $ \e@(SimpleStorage.CountSet _count) -> do
           liftEff $ log $ "Generic show for event: " <> show e
