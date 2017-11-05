@@ -38,12 +38,11 @@ simpleStorageSpec =
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
       hx <- runWeb3 $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount (zero :: Value Wei) n :: Web3 HttpProvider _ _
+      liftEff <<< log $ "setCount tx hash: " <> show hx
       _ <- liftAff $ runWeb3 $
         event simpleStorage.address $ \e@(SimpleStorage.CountSet _count) -> do
-          liftEff $ log $ "Generic show for event: " <> show e
+          liftEff $ log $ "Received Event: " <> show e
           _ <- liftAff $ putVar _count var
-          liftEff $ logShow $ "Put count: " <> show _count
           pure TerminateEvent :: ReaderT _ (Web3 HttpProvider _) _
-      liftEff $ logShow hx
       val <- takeVar var
       Just val `shouldEqual` Just n
