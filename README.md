@@ -10,8 +10,6 @@ This repo contains the end to end tests for [purescript-web3](https://github.com
 - truffle
 - a running ethereum node with at least one unlocked account with ether. 
 
-Note that we will provide a workaround for the `pulp run` step until [this issue](https://github.com/purescript-contrib/pulp/issues/309) is fixed. It is embedded in `npm i`
-
 ## Build instructions
 
 Note that we will provide a workaround for the `pulp run` step until [this issue](https://github.com/purescript-contrib/pulp/issues/309) is fixed. It is embedded in `npm i`
