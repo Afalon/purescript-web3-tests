@@ -9,7 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "psc-package": "psc-package update",
-    "postinstall": "npm run psc-package && pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true && rm generator.js"
+    "postinstall": "npm run psc-package && pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true ; rm generator.js"
   },
   "author": "",
   "license": "ISC",
