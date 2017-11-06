@@ -4,6 +4,7 @@
     "source": "https://github.com/f-o-a-m/package-sets.git",
     "depends": [
         "prelude",
+        "string-parsers",
         "console",
         "node-fs-aff",
         "profunctor-lenses",
