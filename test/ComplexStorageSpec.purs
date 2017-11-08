@@ -16,24 +16,24 @@ import Data.Array ((!!))
 import Data.ByteString as BS
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
-import Network.Ethereum.Web3.Provider (forkWeb3, runWeb3)
-import Network.Ethereum.Web3.Types hiding (class Unit)
+import Network.Ethereum.Web3.Provider (forkWeb3, httpProvider, runWeb3)
+import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
+import Network.Ethereum.Web3.Types
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Runner (timeout)
-import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider)
+import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
 
 complexStorageSpec :: forall r . Spec _ Unit
 complexStorageSpec =
   describe "interacting with a ComplexStorage Contract" do
     it "can set the values of simple storage" $ do
-      accounts <- runWeb3 (eth_getAccounts :: Web3 HttpProvider _ _)
+      accounts <- runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract complexStorage <- getDeployedContract (SProxy :: SProxy "ComplexStorage")
@@ -47,13 +47,13 @@ complexStorageSpec =
           bytes16 = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "12345678123456781234567812345678"
           elem = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "1234"
           bytes2s = [elem :< elem :< elem :< elem :< nilVector, elem :< elem :< elem :< elem :< nilVector]
-      hx <- runWeb3 $ (ComplexStorage.setValues (Just complexStorage.address) primaryAccount (zero :: Value Wei)
-          uint int bool int224 bools ints string bytes16 bytes2s ::  Web3 HttpProvider _ _)
+      hx <- runWeb3 httpP $ ComplexStorage.setValues (Just complexStorage.address) primaryAccount
+          uint int bool int224 bools ints string bytes16 bytes2s
       liftEff $ log $ "setValues tx hash: " <> show hx
-      _ <- liftAff $ runWeb3 $
+      _ <- liftAff $ runWeb3 httpP $
         event complexStorage.address $ \(e :: ComplexStorage.ValsSet) -> do
           liftEff $ log $ "Received event: " <> show e
           _ <- liftAff $ putVar e var
-          pure TerminateEvent :: ReaderT _ (Web3 HttpProvider _) _
+          pure TerminateEvent
       ev <- takeVar var
       ev `shouldEqual` ComplexStorage.ValsSet uint int bool int224 bools ints string bytes16 bytes2s

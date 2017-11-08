@@ -25,7 +25,7 @@ import Network.Ethereum.Web3.Types (Address, ETH, Web3(..))
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
-
+import Type.Proxy(Proxy(..))
 
 makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
 makeProvider = unsafeCoerceEff $ do
@@ -34,6 +34,9 @@ makeProvider = unsafeCoerceEff $ do
   httpProvider url
 
 data HttpProvider
+
+httpP :: Proxy HttpProvider
+httpP = Proxy
 
 instance providerHttp :: IsAsyncProvider HttpProvider where
   getAsyncProvider = Web3 <<< liftEff' $ makeProvider
@@ -48,7 +51,7 @@ getDeployedContract :: forall eff name .
                     -> Aff (fs :: FS, eth :: ETH, exception :: EXCEPTION | eff) (Contract name)
 getDeployedContract sproxy = do
   let fname = "./build/contracts/" <> reflectSymbol sproxy <> ".json"
-  nodeId <- runWeb3 (net_version :: Web3 HttpProvider _ _)
+  nodeId <- runWeb3 httpP net_version
   ejson <- jsonParser <$> readTextFile UTF8 fname
   addr <- liftEff $ either throw pure $ do
     contractJson <- ejson

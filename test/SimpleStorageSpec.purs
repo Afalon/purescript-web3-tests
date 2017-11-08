@@ -25,24 +25,24 @@ import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Runner (timeout)
-import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider)
+import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
 
 simpleStorageSpec :: forall r . Spec _ Unit
 simpleStorageSpec =
   describe "interacting with a SimpleStorage Contract" do
 
     it "can set the value of simple storage" $ do
-      accounts <- runWeb3 (eth_getAccounts :: Web3 HttpProvider _ _)
+      accounts <- runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
-      hx <- runWeb3 $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount (zero :: Value Wei) n :: Web3 HttpProvider _ _
+      hx <- runWeb3 httpP $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount n
       liftEff <<< log $ "setCount tx hash: " <> show hx
-      _ <- liftAff $ runWeb3 $
+      _ <- liftAff $ runWeb3 httpP $
         event simpleStorage.address $ \e@(SimpleStorage.CountSet _count) -> do
           liftEff $ log $ "Received Event: " <> show e
           _ <- liftAff $ putVar _count var
-          pure TerminateEvent :: ReaderT _ (Web3 HttpProvider _) _
+          pure TerminateEvent
       val <- takeVar var
       Just val `shouldEqual` Just n
