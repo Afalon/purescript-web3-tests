@@ -5,29 +5,20 @@ import Network.Ethereum.Web3.Types
 import Prelude
 
 import Contracts.MockERC20 as MockERC20
-import Control.Monad.Aff (launchAff)
-import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Reader (ReaderT)
+import Control.Monad.Eff.Console (log)
 import Data.Array ((!!))
-import Data.ByteString as BS
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Symbol (SProxy(..))
 import Network.Ethereum.Web3.Api (eth_getAccounts)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
-import Network.Ethereum.Web3.Provider (forkWeb3, httpProvider, runWeb3)
-import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
-import Node.FS.Aff (FS)
-import Node.Process (PROCESS)
+import Network.Ethereum.Web3.Provider (runWeb3)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Runner (timeout)
-import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
+import Utils (getDeployedContract, Contract(..), httpP)
 
 mockERC20Spec :: forall r . Spec _ Unit
 mockERC20Spec =
