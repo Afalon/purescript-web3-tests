@@ -11,7 +11,7 @@ contract ComplexStorage {
     bytes16 public bytes16Val;
     bytes2[4][] public bytes2VectorListVal;
 
-    event ValsSet(uint, int, bool, int224, bool[2], int[], string, bytes16, bytes2[4][]);
+    event ValsSet(uint a, int b, bool c, int224 d, bool[2] e, int[] f, string g, bytes16 h, bytes2[4][] i);
     
     function setValues(uint _uintVal, int _intVal, bool _boolVal, int224 _int224Val, bool[2] _boolVectorVal, int[] _intListVal, string _stringVal, bytes16 _bytes16Val, bytes2[4][] _bytes2VectorListVal) {
          uintVal =           _uintVal;
