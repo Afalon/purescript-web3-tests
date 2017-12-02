@@ -51,9 +51,10 @@ complexStorageSpec =
           uint int bool int224 bools ints string bytes16 bytes2s
       liftEff $ log $ "setValues tx hash: " <> show hx
       _ <- liftAff $ runWeb3 httpP $
-        event complexStorage.address $ \(e :: ComplexStorage.ValsSet) -> do
+        event complexStorage.address $ \e@(ComplexStorage.ValsSet vs) -> do
           liftEff $ log $ "Received event: " <> show e
+          liftEff $ log $ "Value of `i` field is: " <> show vs.i
           _ <- liftAff $ putVar e var
           pure TerminateEvent
       ev <- takeVar var
-      ev `shouldEqual` ComplexStorage.ValsSet uint int bool int224 bools ints string bytes16 bytes2s
+      ev `shouldEqual` ComplexStorage.ValsSet {a: uint, b: int, c: bool, d: int224, e: bools, f: ints, g: string, h: bytes16,  i:bytes2s}

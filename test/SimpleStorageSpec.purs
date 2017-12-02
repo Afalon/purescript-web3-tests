@@ -40,9 +40,9 @@ simpleStorageSpec =
       hx <- runWeb3 httpP $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount n
       liftEff <<< log $ "setCount tx hash: " <> show hx
       _ <- liftAff $ runWeb3 httpP $
-        event simpleStorage.address $ \e@(SimpleStorage.CountSet _count) -> do
+        event simpleStorage.address $ \e@(SimpleStorage.CountSet cs) -> do
           liftEff $ log $ "Received Event: " <> show e
-          _ <- liftAff $ putVar _count var
+          _ <- liftAff $ putVar cs._count var
           pure TerminateEvent
       val <- takeVar var
       Just val `shouldEqual` Just n
