@@ -3,6 +3,7 @@
     "set": "web3-0.10.0",
     "source": "https://github.com/f-o-a-m/package-sets.git",
     "depends": [
+        "machines",
         "prelude",
         "string-parsers",
         "console",
@@ -18,7 +19,6 @@
         "yargs",
         "web3",
         "web3-generator",
-        "string-parsers",
         "tagged"
     ]
 }
