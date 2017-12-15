@@ -12,13 +12,15 @@ import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Reader (ReaderT)
 import Control.Monad.Trans.Class (lift)
-import Data.Lens.Setter ((.~))
 import Data.Array (range, (!!))
+import Data.Foldable (sum)
+import Data.Lens.Setter ((.~))
+import Data.List.Lazy (foldl, replicate)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Symbol (SProxy(..))
-import Data.Traversable (traverse, sequence, sequence_, sum)
 import Data.Time.Duration (Milliseconds(..))
+import Data.Traversable (traverse, sequence, sequence_, sum)
 import Network.Ethereum.Web3 (BlockMode(..), UIntN, _fromBlock, _toBlock, embed, eventFilter)
 import Network.Ethereum.Web3.Api (eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
@@ -35,6 +37,9 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Runner (timeout)
 import Type.Prelude (Proxy(..))
 import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
+
+toNum :: forall a . Semiring a => Int -> a 
+toNum n = sum (replicate n one) 
 
 simpleStorageSpec :: forall r . Spec _ Unit
 simpleStorageSpec =
@@ -73,8 +78,8 @@ simpleStorageEventsSpec =
       let m = (\n -> unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ n) <$> r
 
       let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
-                         # _fromBlock .~ BN (wrap ((unwrap bn) - one - one - one))
-                         # _toBlock   .~ BN (wrap ((unwrap bn) + one + one + one + one + one + one + one + one + one + one + one + one + one + one))
+                         # _fromBlock .~ BN (wrap ((unwrap bn) - (toNum 10)))
+                         # _toBlock   .~ BN (wrap ((unwrap bn) + (toNum 10)))
 
       _ <- traverse (setter simpleStorage.address primaryAccount) m
 
