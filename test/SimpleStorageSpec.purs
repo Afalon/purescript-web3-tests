@@ -69,12 +69,12 @@ simpleStorageEventsSpec =
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
       accounts <- runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
-      let r = range 1 2
+      let r = range (unsafeToInt <<< unwrap $ bn) ((unsafeToInt <<< unwrap $ bn) + 2)
       let m = (\n -> unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ n) <$> r
 
       let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
-                         # _fromBlock .~ Earliest --BN (wrap ((unwrap bn) - one - one - one))
-                         # _toBlock   .~ Latest -- BN (wrap ((unwrap bn) + one + one + one + one + one + one))
+                         # _fromBlock .~ BN (wrap ((unwrap bn) - one - one - one))
+                         # _toBlock   .~ BN (wrap ((unwrap bn) + one + one + one + one + one + one + one + one + one + one + one + one + one + one))
 
       _ <- traverse (setter simpleStorage.address primaryAccount) m
 
@@ -91,7 +91,7 @@ simpleStorageEventsSpec =
       setter address account n = do
         hx <- runWeb3 httpP $ SimpleStorage.setCount (Just address) account n
         liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
-        _ <- liftAff $ delay (Milliseconds 5000.0) -- we should probably use eth_newBlockFilter instead
+        _ <- liftAff $ delay (Milliseconds 2000.0) -- we should probably use eth_newBlockFilter instead
         liftEff <<< log $ "got delayed"
 
 
