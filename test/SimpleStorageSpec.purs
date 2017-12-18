@@ -50,7 +50,9 @@ simpleStorageSpec =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
+      bn <- runWeb3 httpP $ eth_blockNumber
+      liftEff <<< log $ "Current blockNumber is: " <> show bn
+      let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
       hx <- runWeb3 httpP $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount n
       liftEff <<< log $ "setCount tx hash: " <> show hx
 
@@ -78,9 +80,10 @@ simpleStorageEventsSpec =
       let m = (\n -> unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ n) <$> r
 
       let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
-                         # _fromBlock .~ BN (wrap ((unwrap bn) - (toNum 10)))
-                         # _toBlock   .~ BN (wrap ((unwrap bn) + (toNum 10)))
+                         # _fromBlock .~ BN (wrap ((unwrap bn) - (toNum 0)))
+                         # _toBlock   .~ BN (wrap ((unwrap bn) + (toNum 3)))
 
+      liftEff <<< log $ "The filter is: " <> show filterCountSet
       _ <- traverse (setter simpleStorage.address primaryAccount) m
 
       _ <- liftAff $ runWeb3 httpP $
@@ -88,15 +91,12 @@ simpleStorageEventsSpec =
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar ((unsafeToInt <<< unUIntN $ cs._count) + old) var
-          pure ContinueEvent
+          pure TerminateEvent
       val <- takeVar var
       Just val `shouldEqual` Just (sum r)
 
     where
-      setter address account n = do
-        hx <- runWeb3 httpP $ SimpleStorage.setCount (Just address) account n
-        liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
-        _ <- liftAff $ delay (Milliseconds 2000.0) -- we should probably use eth_newBlockFilter instead
-        liftEff <<< log $ "got delayed"
-
-
+       setter address account n = do
+         hx <- runWeb3 httpP $ SimpleStorage.setCount (Just address) account n
+         liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
+         liftAff $ delay (Milliseconds 1000.0) -- we should probably use eth_newBlockFilter instead
