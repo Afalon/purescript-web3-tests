@@ -1,6 +1,7 @@
 module ComplexStorageSpec where
 
 import Network.Ethereum.Web3.Solidity
+import Network.Ethereum.Web3.Types
 import Prelude
 
 import Contracts.ComplexStorage as ComplexStorage
@@ -14,19 +15,22 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Reader (ReaderT)
 import Data.Array ((!!))
 import Data.ByteString as BS
+import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
+import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
+import Network.Ethereum.Web3 (ChainCursor(..), embed, eventFilter)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
 import Network.Ethereum.Web3.Provider (forkWeb3, httpProvider, runWeb3)
 import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
-import Network.Ethereum.Web3.Types
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Runner (timeout)
+import Type.Prelude (Proxy(..))
 import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
 
 complexStorageSpec :: forall r . Spec _ Unit
@@ -50,8 +54,11 @@ complexStorageSpec =
       hx <- runWeb3 httpP $ ComplexStorage.setValues (Just complexStorage.address) primaryAccount
           uint int bool int224 bools ints string bytes16 bytes2s
       liftEff $ log $ "setValues tx hash: " <> show hx
+      let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address 
+                          # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
+                          # _toBlock   .~ Latest --(BN <<< wrap <<< embed $ 4732754)
       _ <- liftAff $ runWeb3 httpP $
-        event complexStorage.address $ \e@(ComplexStorage.ValsSet vs) -> do
+        event filterValsSet $ \e@(ComplexStorage.ValsSet vs) -> do
           liftEff $ log $ "Received event: " <> show e
           liftEff $ log $ "Value of `i` field is: " <> show vs.i
           _ <- liftAff $ putVar e var
