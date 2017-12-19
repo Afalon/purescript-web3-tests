@@ -19,10 +19,11 @@ import Data.List.Lazy (foldl, replicate)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Symbol (SProxy(..))
+import Data.Set (fromFoldable)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sequence, sequence_, sum)
 import Network.Ethereum.Web3 (BlockMode(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), (+<))
-import Network.Ethereum.Web3.Api (eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
+import Network.Ethereum.Web3.Api (eth_getTransactionReceipt, eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
 import Network.Ethereum.Web3.Contract (EventAction(..), event)
 import Network.Ethereum.Web3.Provider (forkWeb3, runWeb3)
 import Network.Ethereum.Web3.Solidity (uIntNFromBigNumber)
@@ -111,7 +112,7 @@ simpleStorageEventsSpec =
              then pure TerminateEvent
              else pure ContinueEvent
       val <- takeVar var
-      [3,2,1] `shouldEqual` (map (unsafeToInt <<< unUIntN) val)
+      fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting in the past and ending in the future" $ do
       -- set up
@@ -146,7 +147,7 @@ simpleStorageEventsSpec =
       _ <- traverse (setter simpleStorage.address primaryAccount) secondValues
       _ <- joinFiber f2
       val <- takeVar var
-      [6,5,4,3,2,1] `shouldEqual` (map (unsafeToInt <<< unUIntN) val)
+      fromFoldable [6,5,4,3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
 
     it "can stream events starting and ending in the future, unbounded" $ do
@@ -180,7 +181,7 @@ simpleStorageEventsSpec =
       _ <- traverse (setter simpleStorage.address primaryAccount) values
       _ <- joinFiber f
       val <- takeVar var
-      [3,2,1] `shouldEqual` (map (unsafeToInt <<< unUIntN) val)
+      fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting and ending in the future, bounded" $ do
       -- set up
@@ -191,7 +192,7 @@ simpleStorageEventsSpec =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
-      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
+      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [8,9,10]
       now <- runWeb3 httpP $ eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap $ unwrap now +< 3
@@ -210,18 +211,25 @@ simpleStorageEventsSpec =
           if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
+    
       _ <- runWeb3 httpP $ hangOutTillBlock later
       _ <- traverse (setter simpleStorage.address primaryAccount) values
       _ <- joinFiber f
       val <- takeVar var
-      [3,2,1] `shouldEqual` (map (unsafeToInt <<< unUIntN) val)
+      fromFoldable [10,9,8] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
 
     where
        setter address account n = do
          hx <- runWeb3 httpP $ SimpleStorage.setCount (Just address) account n
          liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
-         liftAff $ delay (Milliseconds 1000.0) -- we should probably use eth_newBlockFilter instead
+         --liftAff $ runWeb3 httpP $ hangOutTillTx hx
+         liftAff $ delay (Milliseconds 500.0) -- we should probably use eth_newBlockFilter instead
        hangOutTillBlock bn = do
          bn' <- eth_blockNumber
-         if bn' >= bn then pure unit else liftAff (delay (Milliseconds 1000.0)) *> hangOutTillBlock bn
+         if bn' >= bn then pure unit else liftAff (delay (Milliseconds 1000.0)) *> hangOutTillBlock bn 
+       -- this causes a `(NonEmptyList (NonEmpty (ErrorAtIndex 0 (TypeMismatch "object" "object")) Nil))` for now
+       --hangOutTillTx tx = do
+       --  tx' <- eth_getTransactionReceipt tx
+       --  liftEff <<< log $ "txReceipt: " <> show tx'
+       --  if true then pure unit else liftAff (delay (Milliseconds 1000.0)) *> hangOutTillTx tx
