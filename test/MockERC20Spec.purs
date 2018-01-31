@@ -10,14 +10,13 @@ import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Data.Array ((!!))
+import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3 (ChainCursor(..), _fromBlock, _toBlock, eventFilter)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
-import Network.Ethereum.Web3.Contract (EventAction(..), event)
-import Network.Ethereum.Web3.Provider (runWeb3)
+import Network.Ethereum.Web3 (EventAction(..), ChainCursor(..), event, eventFilter, runWeb3, _toBlock, _fromBlock)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -28,7 +27,7 @@ mockERC20Spec :: forall r . Spec _ Unit
 mockERC20Spec =
   describe "interacting with a ComplexStorage Contract" $ do
     it "can set the values of simple storage" $ do
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract complexStorage <- getDeployedContract (SProxy :: SProxy "MockERC20")

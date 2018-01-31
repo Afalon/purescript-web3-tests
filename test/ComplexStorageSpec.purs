@@ -15,15 +15,13 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Reader (ReaderT)
 import Data.Array ((!!))
 import Data.ByteString as BS
+import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3 (ChainCursor(..), embed, eventFilter)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
-import Network.Ethereum.Web3.Contract (EventAction(..), event)
-import Network.Ethereum.Web3.Provider (forkWeb3, httpProvider, runWeb3)
-import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
+import Network.Ethereum.Web3 (EventAction(..), ChainCursor(..), embed, eventFilter, event, forkWeb3, httpProvider, runWeb3, fromData)
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
@@ -37,7 +35,7 @@ complexStorageSpec :: forall r . Spec _ Unit
 complexStorageSpec =
   describe "interacting with a ComplexStorage Contract" do
     it "can set the values of simple storage" $ do
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract complexStorage <- getDeployedContract (SProxy :: SProxy "ComplexStorage")
