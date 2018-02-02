@@ -19,9 +19,9 @@ import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3 (ChainCursor(..), embed, eventFilter)
+import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _to, defaultTransactionOptions, embed, eventFilter)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
-import Network.Ethereum.Web3.Contract (EventAction(..), event)
+import Network.Ethereum.Web3.Contract (event)
 import Network.Ethereum.Web3.Provider (forkWeb3, httpProvider, runWeb3)
 import Network.Ethereum.Web3.Solidity.AbiEncoding (fromData)
 import Node.FS.Aff (FS)
@@ -51,10 +51,11 @@ complexStorageSpec =
           bytes16 = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "12345678123456781234567812345678"
           elem = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "1234"
           bytes2s = [elem :< elem :< elem :< elem :< nilVector, elem :< elem :< elem :< elem :< nilVector]
-      hx <- runWeb3 httpP $ ComplexStorage.setValues (Just complexStorage.address) primaryAccount
-          uint int bool int224 bools ints string bytes16 bytes2s
+          txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
+                                                # _to .~ Just complexStorage.address
+      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions uint int bool int224 bools ints string bytes16 bytes2s
       liftEff $ log $ "setValues tx hash: " <> show hx
-      let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address 
+      let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address
                           # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
                           # _toBlock   .~ Latest --(BN <<< wrap <<< embed $ 4732754)
       _ <- liftAff $ runWeb3 httpP $
