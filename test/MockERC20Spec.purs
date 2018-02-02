@@ -14,9 +14,9 @@ import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3 (ChainCursor(..), _fromBlock, _toBlock, eventFilter)
+import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _fromBlock, _toBlock, defaultTransactionOptions, eventFilter)
 import Network.Ethereum.Web3.Api (eth_getAccounts)
-import Network.Ethereum.Web3.Contract (EventAction(..), event)
+import Network.Ethereum.Web3.Contract (event)
 import Network.Ethereum.Web3.Provider (runWeb3)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
@@ -34,7 +34,9 @@ mockERC20Spec =
       Contract complexStorage <- getDeployedContract (SProxy :: SProxy "MockERC20")
       let amount = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
           to = unsafePartial $ fromJust $ mkAddress =<< mkHexString "0000000000000000000000000000000000000000"
-      hx <- runWeb3 httpP $ MockERC20.transfer (Just complexStorage.address) primaryAccount to amount
+          txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
+                                                # _to .~ Just complexStorage.address
+      hx <- runWeb3 httpP $ MockERC20.transfer txOptions to amount
       liftEff $ log $ "setValues tx hash: " <> show hx
 
       let fltTransfer = eventFilter (Proxy :: Proxy MockERC20.Transfer) complexStorage.address

@@ -1,7 +1,7 @@
 module SimpleStorageSpec where
 
 import Prelude
-import Control.Monad.Reader (ask)
+
 import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Aff (Fiber, delay, launchAff, joinFiber)
 import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
@@ -11,6 +11,7 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log, logShow)
 import Control.Monad.Eff.Exception (EXCEPTION)
 import Control.Monad.Reader (ReaderT)
+import Control.Monad.Reader (ask)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, (!!), (:))
 import Data.Foldable (sum)
@@ -18,13 +19,13 @@ import Data.Lens.Setter ((.~))
 import Data.List.Lazy (foldl, replicate)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap, wrap)
-import Data.Symbol (SProxy(..))
 import Data.Set (fromFoldable)
+import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sequence, sequence_, sum)
-import Network.Ethereum.Web3 (ChainCursor(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), (+<))
+import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), Change(..), UIntN, _fromBlock, _toBlock, defaultTransactionOptions, embed, eventFilter, uIntNFromBigNumber, (+<), _from, _to)
 import Network.Ethereum.Web3.Api (eth_getTransactionReceipt, eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
-import Network.Ethereum.Web3.Contract (EventAction(..), event)
+import Network.Ethereum.Web3.Contract (event)
 import Network.Ethereum.Web3.Provider (forkWeb3, runWeb3)
 import Network.Ethereum.Web3.Solidity (uIntNFromBigNumber)
 import Network.Ethereum.Web3.Solidity.UInt (UIntN, unUIntN)
@@ -40,7 +41,7 @@ import Type.Prelude (Proxy(..))
 import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
 
 toNum :: forall a . Semiring a => Int -> a 
-toNum n = sum (replicate n one) 
+toNum n = sum (replicate n one)
 
 simpleStorageSpec :: forall r . Spec _ Unit
 simpleStorageSpec =
@@ -54,7 +55,9 @@ simpleStorageSpec =
       bn <- runWeb3 httpP $ eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show bn
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
-      hx <- runWeb3 httpP $ SimpleStorage.setCount (Just simpleStorage.address) primaryAccount n
+          txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
+                                                # _to .~ Just simpleStorage.address
+      hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions n
       liftEff <<< log $ "setCount tx hash: " <> show hx
 
       let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
@@ -221,7 +224,10 @@ simpleStorageEventsSpec =
 
     where
        setter address account n = do
-         hx <- runWeb3 httpP $ SimpleStorage.setCount (Just address) account n
+
+         let txOptions = defaultTransactionOptions # _from .~ Just account
+                                                   # _to .~ Just address
+         hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions n
          liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
          --liftAff $ runWeb3 httpP $ hangOutTillTx hx
          liftAff $ delay (Milliseconds 500.0) -- we should probably use eth_newBlockFilter instead
