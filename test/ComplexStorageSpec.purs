@@ -5,7 +5,7 @@ import Network.Ethereum.Web3.Types
 import Prelude
 
 import Contracts.ComplexStorage as ComplexStorage
-import Control.Monad.Aff (launchAff)
+import Control.Monad.Aff (joinFiber, launchAff)
 import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff (Eff)
@@ -20,8 +20,8 @@ import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3.Api (eth_getAccounts)
-import Network.Ethereum.Web3 (EventAction(..), ChainCursor(..), embed, eventFilter, event, forkWeb3, httpProvider, runWeb3, fromData)
+import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _to, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, fromData, hexadecimal, httpProvider, parseBigNumber, runWeb3)
+import Network.Ethereum.Web3.Api (eth_blockNumber, eth_getAccounts)
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
@@ -34,7 +34,7 @@ import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, htt
 complexStorageSpec :: forall r . Spec _ Unit
 complexStorageSpec =
   describe "interacting with a ComplexStorage Contract" do
-    it "can set the values of simple storage" $ do
+    it "can set the values of complex storage" $ do
       accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
@@ -49,17 +49,22 @@ complexStorageSpec =
           bytes16 = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "12345678123456781234567812345678"
           elem = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "1234"
           bytes2s = [elem :< elem :< elem :< elem :< nilVector, elem :< elem :< elem :< elem :< nilVector]
-      hx <- runWeb3 httpP $ ComplexStorage.setValues (Just complexStorage.address) primaryAccount
-          uint int bool int224 bools ints string bytes16 bytes2s
-      liftEff $ log $ "setValues tx hash: " <> show hx
-      let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address 
+          txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
+                                                # _to .~ Just complexStorage.address
+                                                # _gas .~ parseBigNumber hexadecimal "0x2dc2dc"
+      liftEff $ log $ "setting values"
+      let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address
                           # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
                           # _toBlock   .~ Latest --(BN <<< wrap <<< embed $ 4732754)
-      _ <- liftAff $ runWeb3 httpP $
+      fiber <- forkWeb3 httpP $
         event filterValsSet $ \e@(ComplexStorage.ValsSet vs) -> do
           liftEff $ log $ "Received event: " <> show e
           liftEff $ log $ "Value of `i` field is: " <> show vs.i
           _ <- liftAff $ putVar e var
           pure TerminateEvent
+      bn <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions uint int bool int224 bools ints string bytes16 bytes2s
+      liftEff $ log $ "setValues tx hash: " <> show hx
+      _ <- joinFiber fiber
       ev <- takeVar var
       ev `shouldEqual` ComplexStorage.ValsSet {a: uint, b: int, c: bool, d: int224, e: bools, f: ints, g: string, h: bytes16,  i:bytes2s}

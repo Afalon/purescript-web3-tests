@@ -12,7 +12,7 @@ import Control.Monad.Eff.Unsafe (unsafeCoerceEff)
 import Control.Monad.Except (runExcept)
 import Data.Argonaut.Parser (jsonParser)
 import Data.Argonaut.Prisms (_Object, _String)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..), either, fromRight)
 import Data.EitherR (fmapL)
 import Data.Foreign (renderForeignError)
 import Data.Foreign.Class (decode, encode)
@@ -27,7 +27,7 @@ import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (PROCESS, lookupEnv)
 import Type.Proxy(Proxy(..))
-
+import Partial.Unsafe (unsafePartial)
 makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
 makeProvider = unsafeCoerceEff $ do
   murl <- lookupEnv "NODE_URL"
