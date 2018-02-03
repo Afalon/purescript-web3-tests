@@ -5,13 +5,14 @@ import Network.Ethereum.Web3.Types
 import Prelude
 
 import Contracts.SimpleErrorTest as SimpleErrorTest
-import Data.Either (isLeft)
+import Data.Either (fromRight, isLeft)
 import Data.Lens.Setter ((.~))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
 import Debug.Trace (traceA)
-import Network.Ethereum.Web3 (ChainCursor(..), CallError(..), _to, defaultTransactionOptions, runWeb3)
+import Network.Ethereum.Web3 (CallError(..), ChainCursor(..), _to, defaultTransactionOptions, embed, runWeb3, uIntNFromBigNumber)
+import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Runner (timeout)
@@ -23,6 +24,6 @@ errorSpec =
     it "can raise a left for unset values" $ do
       Contract errorTest <- getDeployedContract (SProxy :: SProxy "SimpleErrorTest")
       let txOptions = defaultTransactionOptions # _to .~ Just errorTest.address
-      resp <- runWeb3 httpP $ SimpleErrorTest.name txOptions Latest
-      traceA $ show resp
+          n = unsafePartial fromJust <<< uIntNFromBigNumber $ one
+      resp <- map (unsafePartial fromRight) <<< runWeb3 httpP $ SimpleErrorTest.names txOptions Latest n
       isLeft resp `shouldEqual` true
