@@ -10,6 +10,7 @@ import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Reader (ask)
 import Data.Array (range, (!!), (:))
+import Data.Either (fromRight)
 import Data.Foldable (sum)
 import Data.Lens.Setter ((.~))
 import Data.List.Lazy (foldl, replicate)
@@ -19,13 +20,8 @@ import Data.Set (fromFoldable)
 import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sequence, sequence_, sum)
-import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), Change(..), UIntN, _fromBlock, _toBlock, defaultTransactionOptions, embed, eventFilter, uIntNFromBigNumber, (+<), _from, _to)
 import Network.Ethereum.Web3.Api (eth_getTransactionReceipt, eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
-import Network.Ethereum.Web3.Contract (event)
-import Network.Ethereum.Web3.Provider (forkWeb3, runWeb3)
-import Network.Ethereum.Web3.Solidity (uIntNFromBigNumber)
-import Network.Ethereum.Web3.Solidity.UInt (UIntN, unUIntN)
-import Network.Ethereum.Web3.Types (ETH, Web3(..), Value, Wei, embed, unsafeToInt)
+import Network.Ethereum.Web3 (ETH, Web3(..), Value, Wei, embed, unsafeToInt, UIntN, unUIntN, uIntNFromBigNumber, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), (+<), _from, _to, defaultTransactionOptions)
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
@@ -44,11 +40,11 @@ simpleStorageSpec =
   describe "interacting with a SimpleStorage Contract" do
 
     it "can set the value of simple storage" $ do
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      bn <- runWeb3 httpP $ eth_blockNumber
+      bn <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show bn
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
@@ -70,17 +66,18 @@ simpleStorageEventsSpec =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 
     it "can stream events starting and ending in the past" $ do
+      _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
       blockNumberV <- makeEmptyVar
-      start <- runWeb3 httpP $ eth_blockNumber
+      start <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
       _ <- forkWeb3 httpP $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address)  \e@(SimpleStorage.CountSet cs) -> do
         liftEff <<< log $ "Received CountSet event: " <> show e
@@ -114,17 +111,18 @@ simpleStorageEventsSpec =
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting in the past and ending in the future" $ do
+      _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let firstValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
           secondValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [4,5,6]
-      start <- runWeb3 httpP $ eth_blockNumber
+      start <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
       f1 <- forkWeb3 httpP $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address)  \e@(SimpleStorage.CountSet cs) -> do
         if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
@@ -150,16 +148,17 @@ simpleStorageEventsSpec =
 
 
     it "can stream events starting and ending in the future, unbounded" $ do
+      _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
-      now <- runWeb3 httpP $ eth_blockNumber
+      now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap $ unwrap now +< 3
           filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
@@ -183,16 +182,17 @@ simpleStorageEventsSpec =
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting and ending in the future, bounded" $ do
+      _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
       Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- runWeb3 httpP eth_getAccounts
+      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [8,9,10]
-      now <- runWeb3 httpP $ eth_blockNumber
+      now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap $ unwrap now +< 3
           latest = wrap $ unwrap now +< 8
@@ -230,6 +230,10 @@ simpleStorageEventsSpec =
        hangOutTillBlock bn = do
          bn' <- eth_blockNumber
          if bn' >= bn then pure unit else liftAff (delay (Milliseconds 1000.0)) *> hangOutTillBlock bn 
+       waitBlock = do
+         n <- eth_blockNumber
+         let next = wrap $ embed 1 + unwrap n
+         hangOutTillBlock next
        -- this causes a `(NonEmptyList (NonEmpty (ErrorAtIndex 0 (TypeMismatch "object" "object")) Nil))` for now
        --hangOutTillTx tx = do
        --  tx' <- eth_getTransactionReceipt tx
