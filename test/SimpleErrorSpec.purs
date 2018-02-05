@@ -13,7 +13,6 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Utils (Contract(..), getDeployedContract, httpP)
 
-import Debug.Trace (traceA)
 
 errorSpec :: Spec _ Unit
 errorSpec =
@@ -23,8 +22,4 @@ errorSpec =
       let txOptions = defaultTransactionOptions # _to .~ Just errorTest.address
           n = unsafePartial fromJust <<< uIntNFromBigNumber $ one
       resp <- map (unsafePartial fromRight) <<< runWeb3 httpP $ SimpleErrorTest.names txOptions Latest n
-      traceA $ show resp
       isLeft resp `shouldEqual` true
-      resp' <- map (unsafePartial fromRight) <<< runWeb3 httpP $ SimpleErrorTest.table txOptions Latest n
-      traceA $ show resp'
-      isLeft resp' `shouldEqual` true

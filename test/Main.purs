@@ -11,8 +11,8 @@ import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (defaultConfig, run')
 
 main = run' defaultConfig {timeout = Just (60 * 1000)} [consoleReporter] $ do
--- simpleStorageSpec
--- simpleStorageEventsSpec
--- complexStorageSpec
--- mockERC20Spec
+ simpleStorageSpec
+ simpleStorageEventsSpec
+ complexStorageSpec
+ mockERC20Spec
  errorSpec
