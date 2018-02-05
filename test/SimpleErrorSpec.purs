@@ -27,3 +27,5 @@ errorSpec =
           n = unsafePartial fromJust <<< uIntNFromBigNumber $ one
       resp <- map (unsafePartial fromRight) <<< runWeb3 httpP $ SimpleErrorTest.names txOptions Latest n
       isLeft resp `shouldEqual` true
+      resp' <- map (unsafePartial fromRight) <<< runWeb3 httpP $ SimpleErrorTest.table txOptions Latest n
+      isLeft resp' `shouldEqual` true
