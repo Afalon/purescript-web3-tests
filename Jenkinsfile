@@ -46,6 +46,7 @@ pipeline {
 
   post {
     always {
+      sh("echo dumping ephemeral pod logs && kubectl logs -n jenkins ${env.EPH_POD_NAME}")
       teardownEphemeralPod('cb-purs-web3-tests')
     }
   }
