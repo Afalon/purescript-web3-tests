@@ -1,21 +1,16 @@
 module SimpleErrorSpec where
 
-import Network.Ethereum.Web3.Solidity
-import Network.Ethereum.Web3.Types
 import Prelude
 
 import Contracts.SimpleErrorTest as SimpleErrorTest
 import Data.Either (fromRight, isLeft)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
-import Data.Newtype (wrap)
 import Data.Symbol (SProxy(..))
-import Debug.Trace (traceA)
-import Network.Ethereum.Web3 (CallError(..), ChainCursor(..), _to, defaultTransactionOptions, embed, runWeb3, uIntNFromBigNumber)
+import Network.Ethereum.Web3 (runWeb3, uIntNFromBigNumber, ChainCursor(..), _to, defaultTransactionOptions)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Runner (timeout)
 import Utils (Contract(..), getDeployedContract, httpP)
 
 errorSpec :: Spec _ Unit

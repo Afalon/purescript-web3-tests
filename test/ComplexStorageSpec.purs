@@ -52,7 +52,6 @@ complexStorageSpec =
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just complexStorage.address
                                                 # _gas .~ parseBigNumber hexadecimal "0x2dc2dc"
-      liftEff $ log $ "setting values"
           arg = { _uintVal : uint
                 , _intVal : int
                 , _boolVal : bool
@@ -63,8 +62,6 @@ complexStorageSpec =
                 , _bytes16Val : bytes16
                 , _bytes2VectorListVal : bytes2s
                 }
-      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions arg
-      liftEff $ log $ "setValues tx hash: " <> show hx
       let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address
                           # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
                           # _toBlock   .~ Latest --(BN <<< wrap <<< embed $ 4732754)
@@ -75,7 +72,8 @@ complexStorageSpec =
           _ <- liftAff $ putVar e var
           pure TerminateEvent
       bn <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
-      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions uint int bool int224 bools ints string bytes16 bytes2s
+      liftEff $ log $ "setting values"
+      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions arg
       liftEff $ log $ "setValues tx hash: " <> show hx
       _ <- joinFiber fiber
       ev <- takeVar var
