@@ -53,7 +53,17 @@ complexStorageSpec =
           bytes2s = [elem :< elem :< elem :< elem :< nilVector, elem :< elem :< elem :< elem :< nilVector]
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just complexStorage.address
-      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions uint int bool int224 bools ints string bytes16 bytes2s
+          arg = { _uintVal : uint
+                , _intVal : int
+                , _boolVal : bool
+                , _int224Val : int224
+                , _boolVectorVal : bools
+                , _intListVal : ints
+                , _stringVal : string
+                , _bytes16Val : bytes16
+                , _bytes2VectorListVal : bytes2s
+                }
+      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions arg
       liftEff $ log $ "setValues tx hash: " <> show hx
       let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address
                           # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
