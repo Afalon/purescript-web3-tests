@@ -53,6 +53,18 @@ complexStorageSpec =
                                                 # _to .~ Just complexStorage.address
                                                 # _gas .~ parseBigNumber hexadecimal "0x2dc2dc"
       liftEff $ log $ "setting values"
+          arg = { _uintVal : uint
+                , _intVal : int
+                , _boolVal : bool
+                , _int224Val : int224
+                , _boolVectorVal : bools
+                , _intListVal : ints
+                , _stringVal : string
+                , _bytes16Val : bytes16
+                , _bytes2VectorListVal : bytes2s
+                }
+      hx <- runWeb3 httpP $ ComplexStorage.setValues txOptions arg
+      liftEff $ log $ "setValues tx hash: " <> show hx
       let filterValsSet = eventFilter (Proxy :: Proxy ComplexStorage.ValsSet) complexStorage.address
                           # _fromBlock .~ Latest --(BN <<< wrap <<< embed $ 4732740)
                           # _toBlock   .~ Latest --(BN <<< wrap <<< embed $ 4732754)

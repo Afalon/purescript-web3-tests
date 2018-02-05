@@ -35,7 +35,7 @@ mockERC20Spec =
           to = unsafePartial $ fromJust $ mkAddress =<< mkHexString "0000000000000000000000000000000000000000"
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just complexStorage.address
-      hx <- runWeb3 httpP $ MockERC20.transfer txOptions to amount
+      hx <- runWeb3 httpP $ MockERC20.transfer txOptions {to : to, amount : amount}
       liftEff $ log $ "setValues tx hash: " <> show hx
 
       let fltTransfer = eventFilter (Proxy :: Proxy MockERC20.Transfer) complexStorage.address

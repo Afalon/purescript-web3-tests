@@ -25,7 +25,7 @@ import Network.Ethereum.Web3.Provider (class IsAsyncProvider, Provider, httpProv
 import Network.Ethereum.Web3.Types (Address, ETH, Web3(..))
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
-import Node.Process (PROCESS, lookupEnv)
+import Node.Process (lookupEnv)
 import Type.Proxy(Proxy(..))
 import Partial.Unsafe (unsafePartial)
 makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
