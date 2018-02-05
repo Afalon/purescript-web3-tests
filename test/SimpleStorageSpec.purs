@@ -4,15 +4,11 @@ import Prelude
 
 import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Aff (Fiber, delay, launchAff, joinFiber)
-import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
-import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log, logShow)
-import Control.Monad.Eff.Exception (EXCEPTION)
-import Control.Monad.Reader (ReaderT)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Reader (ask)
-import Control.Monad.Trans.Class (lift)
 import Data.Array (range, (!!), (:))
 import Data.Foldable (sum)
 import Data.Lens.Setter ((.~))
@@ -40,10 +36,10 @@ import Test.Spec.Runner (timeout)
 import Type.Prelude (Proxy(..))
 import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
 
-toNum :: forall a . Semiring a => Int -> a 
+toNum :: forall a . Semiring a => Int -> a
 toNum n = sum (replicate n one)
 
-simpleStorageSpec :: forall r . Spec _ Unit
+simpleStorageSpec :: Spec _ Unit
 simpleStorageSpec =
   describe "interacting with a SimpleStorage Contract" do
 
@@ -57,7 +53,7 @@ simpleStorageSpec =
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just simpleStorage.address
-      hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions n
+      hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions {_count: n}
       liftEff <<< log $ "setCount tx hash: " <> show hx
 
       let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
@@ -69,7 +65,7 @@ simpleStorageSpec =
       val <- takeVar var
       Just val `shouldEqual` Just n
 
-simpleStorageEventsSpec :: forall r . Spec _ Unit
+simpleStorageEventsSpec :: Spec _ Unit
 simpleStorageEventsSpec =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 
@@ -87,7 +83,7 @@ simpleStorageEventsSpec =
       start <- runWeb3 httpP $ eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
       _ <- forkWeb3 httpP $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address)  \e@(SimpleStorage.CountSet cs) -> do
-        liftEff <<< log $ "Received CountSet event: " <> show e 
+        liftEff <<< log $ "Received CountSet event: " <> show e
         if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
           then do
             (Change c) <- ask
@@ -227,7 +223,7 @@ simpleStorageEventsSpec =
 
          let txOptions = defaultTransactionOptions # _from .~ Just account
                                                    # _to .~ Just address
-         hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions n
+         hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions {_count: n}
          liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
          --liftAff $ runWeb3 httpP $ hangOutTillTx hx
          liftAff $ delay (Milliseconds 500.0) -- we should probably use eth_newBlockFilter instead
