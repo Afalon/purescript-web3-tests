@@ -21,7 +21,7 @@ import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sequence, sequence_, sum)
 import Network.Ethereum.Web3.Api (eth_getTransactionReceipt, eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
-import Network.Ethereum.Web3 (ETH, Web3(..), Value, Wei, embed, unsafeToInt, UIntN, unUIntN, uIntNFromBigNumber, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), (+<), _from, _to, defaultTransactionOptions)
+import Network.Ethereum.Web3 (ETH, Web3(..), Value, Wei, embed, unsafeToInt, UIntN, unUIntN, uIntNFromBigNumber, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions)
 import Node.FS.Aff (FS)
 import Node.Process (PROCESS)
 import Partial.Unsafe (unsafePartial)
@@ -160,7 +160,7 @@ simpleStorageEventsSpec =
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
       now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
-      let later = wrap $ unwrap now +< 3
+      let later = wrap (unwrap now + embed 3)
           filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
                          # _fromBlock .~ BN later
                          # _toBlock   .~ Latest
@@ -194,8 +194,8 @@ simpleStorageEventsSpec =
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [8,9,10]
       now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
-      let later = wrap $ unwrap now +< 3
-          latest = wrap $ unwrap now +< 8
+      let later = wrap $ unwrap now + embed 3
+          latest = wrap $ unwrap now + embed 8
           filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
                          # _fromBlock .~ BN later
                          # _toBlock   .~ BN latest
@@ -210,7 +210,6 @@ simpleStorageEventsSpec =
           if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
-    
       _ <- runWeb3 httpP $ hangOutTillBlock later
       _ <- traverse (setter simpleStorage.address primaryAccount) values
       _ <- joinFiber f

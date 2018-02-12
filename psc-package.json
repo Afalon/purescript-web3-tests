@@ -1,6 +1,6 @@
 {
     "name": "purescript-web3-tests",
-    "set": "web3-v0.14.0-beta",
+    "set": "web3-v0.15.0-gamma",
     "source": "https://github.com/f-o-a-m/package-sets.git",
     "depends": [
         "coroutines",
@@ -19,6 +19,7 @@
         "yargs",
         "web3",
         "web3-generator",
-        "tagged"
+        "tagged",
+        "modules"
     ]
 }
