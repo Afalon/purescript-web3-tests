@@ -8,5 +8,6 @@ install:
   - npm install
 script:
   - docker run -d -p 8545:8545 foamspace/cliquebait:latest
+  - sleep 10
   - npm run truffle
   - npm run test
