@@ -6,11 +6,7 @@ services:
   - docker
 install:
   - npm install
-  - docker run -p 8545:8545 foamspace/cliquebait:latest -d
+script:
+  - docker run -d -p 8545:8545 foamspace/cliquebait:latest
   - npm run truffle
   - npm run test
-script:
-  - bower install --production
-  - npm run -s build
-  - bower install
-  - npm -s test
