@@ -7,9 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "truffle": "./node_modules/.bin/truffle deploy",
+    "test": "rm -f generator.js ; ./node_modules/.bin/pulp test",
     "psc-package": "psc-package update",
-    "postinstall": "npm run psc-package && pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true ; rm generator.js"
+    "generator": "pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true",
+    "postinstall": "npm run psc-package"
   },
   "author": "",
   "license": "ISC",
@@ -17,8 +19,10 @@
     "bignumber.js": "git+https://github.com/frozeman/bignumber.js-nolookahead.git",
     "crypto-js": "^3.1.8",
     "ethjs-provider-http": "^0.1.6",
+    "psc-package": "^0.2.5",
     "pulp": "^12.0.0",
     "purescript": "^0.11.6",
+    "truffle": "^4.0.6",
     "yargs": "^8.0.2"
   }
 }
