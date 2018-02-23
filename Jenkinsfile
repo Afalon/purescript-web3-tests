@@ -25,9 +25,9 @@ pipeline {
       }
     }
 
-    stage('truffle deploy') {
+    stage('npm run truffle') {
       steps {
-        sh("truffle deploy --network ephemeralnet")
+        sh("npm run truffle -- --network ephemeralnet")
       }
     }
 
@@ -37,9 +37,9 @@ pipeline {
       }
     }
 
-    stage('pulp test') {
+    stage('npm run test') {
       steps {
-        sh("NODE_URL=http://${env.EPH_POD_NAME}.geth-pods.jenkins.svc.cluster.local:8545/ pulp test")
+        sh("NODE_URL=http://${env.EPH_POD_NAME}.geth-pods.jenkins.svc.cluster.local:8545/ npm run test")
       }
     }
   }
