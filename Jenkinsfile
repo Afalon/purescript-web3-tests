@@ -19,21 +19,21 @@ pipeline {
       }
     }
 
-    stage('truffle deploy') {
-      steps {
-        sh("truffle deploy --network ephemeralnet")
-      }
-    }
-
     stage('npm install') {
       steps {
         sh('npm install')
       }
     }
 
-    stage('pulp build') {
+    stage('truffle deploy') {
       steps {
-        sh('pulp build')
+        sh("truffle deploy --network ephemeralnet")
+      }
+    }
+
+    stage('npm run generator'){
+      steps {
+        sh('npm run generator')
       }
     }
 
