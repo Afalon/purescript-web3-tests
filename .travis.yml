@@ -10,4 +10,5 @@ script:
   - docker run -d -p 8545:8545 foamspace/cliquebait:latest
   - sleep 10
   - npm run truffle
+  - npm run generator
   - npm run test
