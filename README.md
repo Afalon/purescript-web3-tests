@@ -1,4 +1,7 @@
 # purescript-web3-tests
+
+[![Build Status](https://travis-ci.org/f-o-a-m/purescript-web3-tests.svg?branch=travis)](https://travis-ci.org/f-o-a-m/purescript-web3-tests)
+
 <img src=https://github.com/f-o-a-m/purescript-web3/blob/master/purescript-web3-logo.png width="75">
 
 ## End to End Testing
