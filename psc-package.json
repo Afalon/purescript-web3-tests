@@ -1,6 +1,6 @@
 {
     "name": "purescript-web3-tests",
-    "set": "web3-v0.15.0-gamma",
+    "set": "web3-v0.15.1",
     "source": "https://github.com/f-o-a-m/package-sets.git",
     "depends": [
         "coroutines",

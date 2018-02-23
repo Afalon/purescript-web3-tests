@@ -1,0 +1,15 @@
+language: node_js
+dist: trusty
+sudo: required
+node_js: stable
+services:
+  - docker
+install:
+  - docker run foamspace/cliquebait
+  - npm install -g bower
+  - npm install
+script:
+  - bower install --production
+  - npm run -s build
+  - bower install
+  - npm -s test
