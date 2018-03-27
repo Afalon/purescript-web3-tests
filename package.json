@@ -7,8 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "truffle": "./node_modules/.bin/truffle deploy",
     "test": "rm -f generator.js ; ./node_modules/.bin/pulp test",
+    "truffle": "./node_modules/.bin/truffle deploy --network=development",
     "psc-package": "psc-package update",
     "generator": "pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true",
     "postinstall": "npm run psc-package"
