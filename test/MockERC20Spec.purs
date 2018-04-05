@@ -18,12 +18,13 @@ import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
-import Utils (getDeployedContract, Contract(..), httpP)
+import Utils (getDeployedContract, Contract(..), makeProvider)
 
 mockERC20Spec :: Spec _ Unit
 mockERC20Spec =
   describe "interacting with a ComplexStorage Contract" $ do
     it "can set the values of simple storage" $ do
+      httpP <- liftEff makeProvider
       accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
