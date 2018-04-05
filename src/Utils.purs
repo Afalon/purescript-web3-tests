@@ -3,8 +3,7 @@ module Utils where
 import Prelude
 
 import Control.Error.Util (note)
-import Control.Monad.Aff (Aff, liftEff')
-import Control.Monad.Aff.Class (liftAff)
+import Control.Monad.Aff (Aff)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Exception (EXCEPTION, throw)
@@ -21,26 +20,16 @@ import Data.Lens.Index (ix)
 import Data.Maybe (maybe)
 import Data.Symbol (class IsSymbol, SProxy, reflectSymbol)
 import Network.Ethereum.Web3.Api (net_version)
-import Network.Ethereum.Web3.Provider (class IsAsyncProvider, Provider, httpProvider, runWeb3)
-import Network.Ethereum.Web3.Types (Address, ETH)
+import Network.Ethereum.Web3 (Address, ETH, Provider, httpProvider, runWeb3)
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (FS, readTextFile)
 import Node.Process (lookupEnv)
-import Type.Proxy(Proxy(..))
 
 makeProvider :: forall eff . Eff (eth :: ETH, exception :: EXCEPTION | eff) Provider
 makeProvider = unsafeCoerceEff $ do
   murl <- lookupEnv "NODE_URL"
   url <- maybe (pure "http://localhost:8545") pure murl
   httpProvider url
-
-data HttpProvider
-
-httpP :: Proxy HttpProvider
-httpP = Proxy
-
-instance providerHttp :: IsAsyncProvider HttpProvider where
-  getAsyncProvider = liftAff <<< liftEff' $ makeProvider
 
 newtype Contract (name :: Symbol) =
   Contract { address :: Address
@@ -52,6 +41,7 @@ getDeployedContract :: forall eff name .
                     -> Aff (fs :: FS, eth :: ETH, exception :: EXCEPTION | eff) (Contract name)
 getDeployedContract sproxy = do
   let fname = "./build/contracts/" <> reflectSymbol sproxy <> ".json"
+  httpP <- liftEff makeProvider
   enodeId <- runWeb3 httpP net_version
   case enodeId of
     Left err -> liftEff <<< throw <<< show $ err

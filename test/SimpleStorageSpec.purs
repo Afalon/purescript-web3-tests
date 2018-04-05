@@ -3,34 +3,29 @@ module SimpleStorageSpec where
 import Prelude
 
 import Contracts.SimpleStorage as SimpleStorage
-import Control.Monad.Aff (Fiber, delay, launchAff, joinFiber)
+import Control.Monad.Aff (delay, joinFiber)
 import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Console (log)
 import Control.Monad.Reader (ask)
-import Data.Array (range, (!!), (:))
+import Data.Array ((!!), (:))
 import Data.Either (fromRight)
-import Data.Foldable (sum)
 import Data.Lens.Setter ((.~))
-import Data.List.Lazy (foldl, replicate)
+import Data.List.Lazy (replicate)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Set (fromFoldable)
 import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
-import Data.Traversable (traverse, sequence, sequence_, sum)
-import Network.Ethereum.Web3.Api (eth_getTransactionReceipt, eth_newBlockFilter, eth_blockNumber, eth_getAccounts, eth_getBlockByNumber)
-import Network.Ethereum.Web3 (ETH, Web3(..), Value, Wei, embed, unsafeToInt, UIntN, unUIntN, uIntNFromBigNumber, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), UIntN, _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions)
-import Node.FS.Aff (FS)
-import Node.Process (PROCESS)
+import Data.Traversable (traverse, sum)
+import Network.Ethereum.Web3.Api (eth_blockNumber, eth_getAccounts)
+import Network.Ethereum.Web3 (unsafeToInt, unUIntN, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions)
 import Partial.Unsafe (unsafePartial)
-import Pipes.Prelude (mapM_)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Runner (timeout)
 import Type.Prelude (Proxy(..))
-import Utils (makeProvider, getDeployedContract, Contract(..), HttpProvider, httpP)
+import Utils (makeProvider, getDeployedContract, Contract(..))
 
 toNum :: forall a . Semiring a => Int -> a
 toNum n = sum (replicate n one)
@@ -40,6 +35,7 @@ simpleStorageSpec =
   describe "interacting with a SimpleStorage Contract" do
 
     it "can set the value of simple storage" $ do
+      httpP <- liftEff makeProvider
       accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
@@ -66,6 +62,7 @@ simpleStorageEventsSpec =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 
     it "can stream events starting and ending in the past" $ do
+      httpP <- liftEff makeProvider
       _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
@@ -111,6 +108,7 @@ simpleStorageEventsSpec =
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting in the past and ending in the future" $ do
+      httpP <- liftEff makeProvider
       _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
@@ -148,6 +146,7 @@ simpleStorageEventsSpec =
 
 
     it "can stream events starting and ending in the future, unbounded" $ do
+      httpP <- liftEff makeProvider
       _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
@@ -182,6 +181,7 @@ simpleStorageEventsSpec =
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting and ending in the future, bounded" $ do
+      httpP <- liftEff makeProvider
       _ <- runWeb3 httpP waitBlock
       -- set up
       var <- makeEmptyVar
@@ -219,7 +219,7 @@ simpleStorageEventsSpec =
 
     where
        setter address account n = do
-
+         httpP <- liftEff makeProvider
          let txOptions = defaultTransactionOptions # _from .~ Just account
                                                    # _to .~ Just address
          hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions {_count: n}

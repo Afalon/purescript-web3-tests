@@ -11,13 +11,15 @@ import Network.Ethereum.Web3 (runWeb3, uIntNFromBigNumber, ChainCursor(..), _to,
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Utils (Contract(..), getDeployedContract, httpP)
+import Utils (Contract(..), getDeployedContract, makeProvider)
+import Control.Monad.Eff.Class (liftEff)
 
 
 errorSpec :: Spec _ Unit
 errorSpec =
   describe "interacting with a SimpleErrorTest contract" do
     it "can raise a left for unset values" $ do
+      httpP <- liftEff makeProvider
       Contract errorTest <- getDeployedContract (SProxy :: SProxy "SimpleErrorTest")
       let txOptions = defaultTransactionOptions # _to .~ Just errorTest.address
           n = unsafePartial fromJust <<< uIntNFromBigNumber $ one
