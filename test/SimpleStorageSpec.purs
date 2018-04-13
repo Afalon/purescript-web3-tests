@@ -1,7 +1,8 @@
-module SimpleStorageSpec where
+module SimpleStorageSpec (simpleStorageSpec, simpleStorageEventsSpec) where
 
 import Prelude
 
+import Chanterelle.Test (TestConfig)
 import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Aff (delay, joinFiber)
 import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
@@ -16,40 +17,38 @@ import Data.List.Lazy (replicate)
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Newtype (unwrap, wrap)
 import Data.Set (fromFoldable)
-import Data.Symbol (SProxy(..))
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sum)
-import Network.Ethereum.Web3.Api (eth_blockNumber, eth_getAccounts)
-import Network.Ethereum.Web3 (unsafeToInt, unUIntN, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions)
+import Network.Ethereum.Web3.Api (eth_blockNumber)
+import Network.Ethereum.Web3 (unsafeToInt, unUIntN, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions, Address)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Prelude (Proxy(..))
-import Utils (makeProvider, getDeployedContract, Contract(..))
 
 toNum :: forall a . Semiring a => Int -> a
 toNum n = sum (replicate n one)
 
-simpleStorageSpec :: Spec _ Unit
-simpleStorageSpec =
+simpleStorageSpec
+  :: forall r.
+     TestConfig (simpleStorage :: Address | r)
+  -> Spec _ Unit
+simpleStorageSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage Contract" do
 
     it "can set the value of simple storage" $ do
-      httpP <- liftEff makeProvider
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
-      let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
+      let primaryAccount = unsafePartial fromJust $ accounts !! 0
       var <- makeEmptyVar
-      Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      bn <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      bn <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show bn
       let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
-                                                # _to .~ Just simpleStorage.address
-      hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions {_count: n}
+                                                # _to .~ Just simpleStorage
+      hx <- runWeb3 provider $ SimpleStorage.setCount txOptions {_count: n}
       liftEff <<< log $ "setCount tx hash: " <> show hx
 
-      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
-      _ <- liftAff $ runWeb3 httpP $
+      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage
+      _ <- liftAff $ runWeb3 provider $
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           liftEff $ log $ "Received Event: " <> show e
           _ <- liftAff $ putVar cs._count var
@@ -57,26 +56,26 @@ simpleStorageSpec =
       val <- takeVar var
       Just val `shouldEqual` Just n
 
-simpleStorageEventsSpec :: Spec _ Unit
-simpleStorageEventsSpec =
+simpleStorageEventsSpec
+  :: forall r.
+     TestConfig (simpleStorage :: Address | r)
+  -> Spec _ Unit
+simpleStorageEventsSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 
     it "can stream events starting and ending in the past" $ do
-      httpP <- liftEff makeProvider
-      _ <- runWeb3 httpP waitBlock
+      _ <- runWeb3 provider waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
-      Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
       blockNumberV <- makeEmptyVar
-      start <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      start <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
-      _ <- forkWeb3 httpP $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address)  \e@(SimpleStorage.CountSet cs) -> do
+      _ <- forkWeb3 provider $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage)  \e@(SimpleStorage.CountSet cs) -> do
         liftEff <<< log $ "Received CountSet event: " <> show e
         if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
           then do
@@ -85,18 +84,18 @@ simpleStorageEventsSpec =
             pure TerminateEvent
           else pure ContinueEvent
       liftEff <<< log $ "About to traverse setters"
-      _ <- traverse (setter simpleStorage.address primaryAccount) values
+      _ <- traverse (setter simpleStorage primaryAccount) values
       liftEff <<< log $ "Done setting"
       end <- liftAff $ takeVar blockNumberV
 
-      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
+      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage
                          # _fromBlock .~ BN start
                          # _toBlock   .~ BN end
       liftEff <<< log $ "The filter is: " <> show filterCountSet
       -- set the count, sequentially, -> bn -> bn + 1 -> bn + 2
       -- register the filter
       delay (Milliseconds 5000.0)
-      _ <- runWeb3 httpP $
+      _ <- runWeb3 provider $
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
@@ -108,65 +107,59 @@ simpleStorageEventsSpec =
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting in the past and ending in the future" $ do
-      httpP <- liftEff makeProvider
-      _ <- runWeb3 httpP waitBlock
+      _ <- runWeb3 provider waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
-      Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let firstValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
           secondValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [4,5,6]
-      start <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      start <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
-      f1 <- forkWeb3 httpP $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address)  \e@(SimpleStorage.CountSet cs) -> do
+      f1 <- forkWeb3 provider $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage)  \e@(SimpleStorage.CountSet cs) -> do
         if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
           then pure TerminateEvent
           else pure ContinueEvent
-      _ <- traverse (setter simpleStorage.address primaryAccount) firstValues
+      _ <- traverse (setter simpleStorage primaryAccount) firstValues
       _ <- joinFiber f1
       delay (Milliseconds 5000.0)
-      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
+      let filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage
                          # _fromBlock .~ BN start
                          # _toBlock   .~ Latest
-      f2 <- forkWeb3 httpP $
+      f2 <- forkWeb3 provider $
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar (cs._count : old) var
           if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 6)
              then pure TerminateEvent
              else pure ContinueEvent
-      _ <- traverse (setter simpleStorage.address primaryAccount) secondValues
+      _ <- traverse (setter simpleStorage primaryAccount) secondValues
       _ <- joinFiber f2
       val <- takeVar var
       fromFoldable [6,5,4,3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
 
     it "can stream events starting and ending in the future, unbounded" $ do
-      httpP <- liftEff makeProvider
-      _ <- runWeb3 httpP waitBlock
+      _ <- runWeb3 provider waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
-      Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
-      now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      now <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap (unwrap now + embed 3)
-          filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
+          filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage
                          # _fromBlock .~ BN later
                          # _toBlock   .~ Latest
       liftEff <<< log $ "The filter is: " <> show filterCountSet
       -- set the count, sequentially, -> bn -> bn + 1 -> bn + 2
       -- register the filter
-      f <- forkWeb3 httpP $
+      f <- forkWeb3 provider $
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
@@ -174,35 +167,32 @@ simpleStorageEventsSpec =
           if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
-      _ <- runWeb3 httpP $ hangOutTillBlock later
-      _ <- traverse (setter simpleStorage.address primaryAccount) values
+      _ <- runWeb3 provider $ hangOutTillBlock later
+      _ <- traverse (setter simpleStorage primaryAccount) values
       _ <- joinFiber f
       val <- takeVar var
       fromFoldable [3,2,1] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
 
     it "can stream events starting and ending in the future, bounded" $ do
-      httpP <- liftEff makeProvider
-      _ <- runWeb3 httpP waitBlock
+      _ <- runWeb3 provider waitBlock
       -- set up
       var <- makeEmptyVar
       putVar [] var
-      Contract simpleStorage <- getDeployedContract (SProxy :: SProxy "SimpleStorage")
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
       let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [8,9,10]
-      now <- unsafePartial fromRight <$> runWeb3 httpP eth_blockNumber
+      now <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap $ unwrap now + embed 3
           latest = wrap $ unwrap now + embed 8
-          filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage.address
+          filterCountSet = eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage
                          # _fromBlock .~ BN later
                          # _toBlock   .~ BN latest
       liftEff <<< log $ "The filter is: " <> show filterCountSet
       -- set the count, sequentially, -> bn -> bn + 1 -> bn + 2
       -- register the filter
-      f <- forkWeb3 httpP $
+      f <- forkWeb3 provider $
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
@@ -210,8 +200,8 @@ simpleStorageEventsSpec =
           if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
-      _ <- runWeb3 httpP $ hangOutTillBlock later
-      _ <- traverse (setter simpleStorage.address primaryAccount) values
+      _ <- runWeb3 provider $ hangOutTillBlock later
+      _ <- traverse (setter simpleStorage primaryAccount) values
       _ <- joinFiber f
       val <- takeVar var
       fromFoldable [10,9,8] `shouldEqual` fromFoldable (map (unsafeToInt <<< unUIntN) val)
@@ -219,12 +209,11 @@ simpleStorageEventsSpec =
 
     where
        setter address account n = do
-         httpP <- liftEff makeProvider
          let txOptions = defaultTransactionOptions # _from .~ Just account
                                                    # _to .~ Just address
-         hx <- runWeb3 httpP $ SimpleStorage.setCount txOptions {_count: n}
+         hx <- runWeb3 provider $ SimpleStorage.setCount txOptions {_count: n}
          liftEff <<< log $ "setCount: " <> show n <> ", tx hash: " <> show hx
-         --liftAff $ runWeb3 httpP $ hangOutTillTx hx
+         --liftAff $ runWeb3 provider $ hangOutTillTx hx
          liftAff $ delay (Milliseconds 500.0) -- we should probably use eth_newBlockFilter instead
        hangOutTillBlock bn = do
          bn' <- eth_blockNumber

@@ -5,10 +5,10 @@ node_js: stable
 services:
   - docker
 install:
-  - npm install
+  - make
+  - make compile-contracts
 script:
   - docker run -d -p 8545:8545 foamspace/cliquebait:latest
   - sleep 10
-  - npm run truffle
-  - npm run generator
-  - npm run test
+  - make deploy
+  - make test

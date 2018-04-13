@@ -2,45 +2,42 @@ module MockERC20Spec (mockERC20Spec) where
 
 import Prelude
 
+import Chanterelle.Test (TestConfig)
 import Contracts.MockERC20 as MockERC20
 import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (log)
 import Data.Array ((!!))
-import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
-import Data.Symbol (SProxy(..))
-import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, mkAddress, mkHexString, runWeb3, uIntNFromBigNumber)
-import Network.Ethereum.Web3.Api (eth_getAccounts)
+import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, mkAddress, mkHexString, runWeb3, uIntNFromBigNumber, Address)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Proxy (Proxy(..))
-import Utils (getDeployedContract, Contract(..), makeProvider)
 
-mockERC20Spec :: Spec _ Unit
-mockERC20Spec =
+mockERC20Spec
+  :: forall r.
+     TestConfig (mockERC20 :: Address | r)
+  -> Spec _ Unit
+mockERC20Spec {accounts, provider, mockERC20} =
   describe "interacting with a ComplexStorage Contract" $ do
     it "can set the values of simple storage" $ do
-      httpP <- liftEff makeProvider
-      accounts <- unsafePartial fromRight <$> runWeb3 httpP eth_getAccounts
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
-      Contract complexStorage <- getDeployedContract (SProxy :: SProxy "MockERC20")
       let amount = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
           to = unsafePartial $ fromJust $ mkAddress =<< mkHexString "0000000000000000000000000000000000000000"
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
-                                                # _to .~ Just complexStorage.address
-      hx <- runWeb3 httpP $ MockERC20.transfer txOptions {to : to, amount : amount}
+                                                # _to .~ Just mockERC20
+      hx <- runWeb3 provider $ MockERC20.transfer txOptions {to : to, amount : amount}
       liftEff $ log $ "setValues tx hash: " <> show hx
 
-      let fltTransfer = eventFilter (Proxy :: Proxy MockERC20.Transfer) complexStorage.address
+      let fltTransfer = eventFilter (Proxy :: Proxy MockERC20.Transfer) mockERC20
                           # _fromBlock .~ Latest -- (BN <<< wrap <<< embed $ 4732740)
                           # _toBlock   .~ Latest -- (BN <<< wrap <<< embed $ 4732754)
 
-      _ <- liftAff $ runWeb3 httpP $
+      _ <- liftAff $ runWeb3 provider $
         event fltTransfer $ \e@(MockERC20.Transfer tfr) -> do
           liftEff $ log $ "Received transfer event: " <> show e
           liftEff $ log $ "Value of `amount` field is: " <> show tfr.amount
