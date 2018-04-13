@@ -10,9 +10,7 @@ This repo contains the end to end tests for [purescript-web3](https://github.com
 ## Requirements
 - a running ethereum node with at least one unlocked account with ether. 
 
-## Build instructions
-
-Note that we will provide a workaround for the `pulp run` step until [this issue](https://github.com/purescript-contrib/pulp/issues/309) is fixed. It is embedded in `npm i`
+## Build and Test Instructions
 
 ```bash
 > npm install
