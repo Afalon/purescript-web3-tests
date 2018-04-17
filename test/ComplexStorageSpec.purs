@@ -1,6 +1,7 @@
 module ComplexStorageSpec (complexStorageSpec) where
 
 import Prelude
+
 import Chanterelle.Test (TestConfig)
 import Contracts.ComplexStorage as ComplexStorage
 import Control.Monad.Aff (joinFiber)
@@ -13,12 +14,13 @@ import Data.ByteString as BS
 import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
-import Network.Ethereum.Web3 (event, eventFilter, runWeb3, intNFromBigNumber, uIntNFromBigNumber, embed, (:<), nilVector, fromByteString, defaultTransactionOptions, _from, _to, _gas, parseBigNumber, hexadecimal, _fromBlock, ChainCursor(..), _toBlock, forkWeb3, EventAction(..), Address)
+import Network.Ethereum.Core.BigNumber (hexadecimal, parseBigNumber)
+import Network.Ethereum.Web3 (event, eventFilter, runWeb3, intNFromBigNumber, uIntNFromBigNumber, embed, (:<), nilVector, fromByteString, defaultTransactionOptions, _from, _to, _gas, _fromBlock, ChainCursor(..), _toBlock, forkWeb3, EventAction(..), Address)
 import Network.Ethereum.Web3.Api (eth_blockNumber)
+import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Type.Prelude (Proxy(..))
-import Partial.Unsafe (unsafePartial)
 
 complexStorageSpec
   :: forall r.
