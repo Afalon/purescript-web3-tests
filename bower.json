@@ -14,6 +14,6 @@
     "purescript-console": "^3.0.0",
     "purescript-psci-support": "^3.0.0",
     "purescript-spec": "^2.0.0",
-    "purescript-chanterelle": "f-o-a-m/chanterelle#1c66dda3a1127f1d5b13a543d69fb08c20940696"
+    "purescript-chanterelle": "f-o-a-m/chanterelle#a21dddb07283d1c26f65b8d5885de1099ca552f7"
   }
 }
