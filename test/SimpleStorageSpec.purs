@@ -5,10 +5,10 @@ import Prelude
 import Chanterelle.Test (TestConfig)
 import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Aff (delay, joinFiber)
-import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Reader (ask)
 import Data.Array ((!!), (:))
 import Data.Either (fromRight)
@@ -20,7 +20,7 @@ import Data.Set (fromFoldable)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sum)
 import Network.Ethereum.Core.BigNumber (unsafeToInt)
-import Network.Ethereum.Web3 (Address, ChainCursor(BN, Latest), Change(Change), EventAction(ContinueEvent, TerminateEvent), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, runWeb3, uIntNFromBigNumber, unUIntN)
+import Network.Ethereum.Web3 (ETH, Address, ChainCursor(BN, Latest), Change(Change), EventAction(ContinueEvent, TerminateEvent), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, runWeb3, uIntNFromBigNumber, unUIntN)
 import Network.Ethereum.Web3.Api (eth_blockNumber)
 import Network.Ethereum.Web3.Solidity.Sizes (s256)
 import Partial.Unsafe (unsafePartial)
@@ -32,9 +32,9 @@ toNum :: forall a . Semiring a => Int -> a
 toNum n = sum (replicate n one)
 
 simpleStorageSpec
-  :: forall r.
+  :: forall r eff.
      TestConfig (simpleStorage :: Address | r)
-  -> Spec _ Unit
+  -> Spec (avar :: AVAR, eth :: ETH, console :: CONSOLE |eff) Unit
 simpleStorageSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage Contract" do
 
@@ -59,9 +59,9 @@ simpleStorageSpec {provider, accounts, simpleStorage} =
       Just val `shouldEqual` Just n
 
 simpleStorageEventsSpec
-  :: forall r.
+  :: forall r eff.
      TestConfig (simpleStorage :: Address | r)
-  -> Spec _ Unit
+  -> Spec (eth :: ETH, avar :: AVAR, console :: CONSOLE |eff) Unit
 simpleStorageEventsSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 

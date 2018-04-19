@@ -5,17 +5,17 @@ import Prelude
 import Chanterelle.Test (TestConfig)
 import Contracts.ComplexStorage as ComplexStorage
 import Control.Monad.Aff (joinFiber)
-import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff.Console (CONSOLE, log)
 import Data.Array ((!!))
 import Data.ByteString as BS
 import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Network.Ethereum.Core.BigNumber (hexadecimal, parseBigNumber)
-import Network.Ethereum.Web3 (type (:&), Address, ChainCursor(Latest), D1, D2, D6, DLProxy(DLProxy), DOne, EventAction(TerminateEvent), _from, _fromBlock, _gas, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, fromByteString, intNFromBigNumber, nilVector, runWeb3, uIntNFromBigNumber, (:<))
+import Network.Ethereum.Web3 (ETH, Address, ChainCursor(Latest), EventAction(TerminateEvent), _from, _fromBlock, _gas, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, fromByteString, intNFromBigNumber, nilVector, runWeb3, uIntNFromBigNumber, (:<))
 import Network.Ethereum.Web3.Api (eth_blockNumber)
 import Network.Ethereum.Web3.Solidity.Sizes (s16, s2, s224, s256)
 import Partial.Unsafe (unsafePartial)
@@ -24,9 +24,9 @@ import Test.Spec.Assertions (shouldEqual)
 import Type.Prelude (Proxy(..))
 
 complexStorageSpec
-  :: forall r.
+  :: forall r eff.
      TestConfig (complexStorage :: Address | r)
-  -> Spec _ Unit
+  -> Spec (avar :: AVAR, eth :: ETH, console :: CONSOLE |eff) Unit
 complexStorageSpec {provider, accounts, complexStorage} =
   describe "interacting with a ComplexStorage Contract" do
     it "can set the values of complex storage" $ do
