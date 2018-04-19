@@ -1,9 +1,10 @@
 *bower_components*
 *node_modules*
 .purs-*
-.psci*
+.psc*
 output/*
 build/*
 *.#*
 .psc-package/*
 src/Contracts/*
+package-lock.json

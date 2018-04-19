@@ -11,7 +11,8 @@ import Control.Monad.Eff.Console (log)
 import Data.Array ((!!))
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
-import Network.Ethereum.Web3 (ChainCursor(..), EventAction(..), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, mkAddress, mkHexString, runWeb3, uIntNFromBigNumber, Address)
+import Network.Ethereum.Web3 (Address, ChainCursor(Latest), EventAction(TerminateEvent), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, mkAddress, mkHexString, runWeb3, uIntNFromBigNumber)
+import Network.Ethereum.Web3.Solidity.Sizes (s256)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -26,7 +27,7 @@ mockERC20Spec {accounts, provider, mockERC20} =
     it "can set the values of simple storage" $ do
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
-      let amount = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
+      let amount = unsafePartial $ fromJust <<< uIntNFromBigNumber s256 <<< embed $ 1
           to = unsafePartial $ fromJust $ mkAddress =<< mkHexString "0000000000000000000000000000000000000000"
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just mockERC20

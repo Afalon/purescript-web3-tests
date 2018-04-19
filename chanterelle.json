@@ -4,6 +4,7 @@
     "source-dir": "contracts",
     "modules": [ "ComplexStorage"
                , "SimpleStorage"
+               , "Adoption"
                , "PayableTest"
                , "MockERC20"
                , "SimpleErrorTest"

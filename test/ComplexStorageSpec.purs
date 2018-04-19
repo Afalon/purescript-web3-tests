@@ -15,8 +15,9 @@ import Data.Either (fromRight)
 import Data.Lens.Setter ((.~))
 import Data.Maybe (Maybe(..), fromJust)
 import Network.Ethereum.Core.BigNumber (hexadecimal, parseBigNumber)
-import Network.Ethereum.Web3 (event, eventFilter, runWeb3, intNFromBigNumber, uIntNFromBigNumber, embed, (:<), nilVector, fromByteString, defaultTransactionOptions, _from, _to, _gas, _fromBlock, ChainCursor(..), _toBlock, forkWeb3, EventAction(..), Address)
+import Network.Ethereum.Web3 (type (:&), Address, ChainCursor(Latest), D1, D2, D6, DLProxy(DLProxy), DOne, EventAction(TerminateEvent), _from, _fromBlock, _gas, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, fromByteString, intNFromBigNumber, nilVector, runWeb3, uIntNFromBigNumber, (:<))
 import Network.Ethereum.Web3.Api (eth_blockNumber)
+import Network.Ethereum.Web3.Solidity.Sizes (s16, s2, s224, s256)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -31,15 +32,19 @@ complexStorageSpec {provider, accounts, complexStorage} =
     it "can set the values of complex storage" $ do
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
       var <- makeEmptyVar
-      let uint = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ 1
-          int = unsafePartial $ fromJust <<< intNFromBigNumber <<< embed $ (negate 1)
+      let uint = unsafePartial $ fromJust <<< uIntNFromBigNumber s256 <<< embed $ 1
+          int = unsafePartial $ fromJust <<< intNFromBigNumber s256 <<< embed $ (negate 1)
           bool = true
-          int224 = unsafePartial $ fromJust <<< intNFromBigNumber <<< embed $  221
+          int224 = unsafePartial $ fromJust <<< intNFromBigNumber s224 <<< embed $  221
           bools = true :< false :< nilVector
-          ints = [unsafePartial $ fromJust <<< intNFromBigNumber <<< embed $ 1, unsafePartial $ fromJust <<< intNFromBigNumber <<< embed $ negate 1, unsafePartial $ fromJust <<< intNFromBigNumber <<< embed $  3]
+          ints = 
+            [ unsafePartial $ fromJust <<< intNFromBigNumber s256 <<< embed $ 1
+            , unsafePartial $ fromJust <<< intNFromBigNumber s256 <<< embed $ negate 1
+            , unsafePartial $ fromJust <<< intNFromBigNumber s256 <<< embed $ 3
+            ]
           string = "hello"
-          bytes16 = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "12345678123456781234567812345678"
-          elem = unsafePartial $ fromJust $ fromByteString =<< flip BS.fromString BS.Hex "1234"
+          bytes16 = unsafePartial $ fromJust $ fromByteString s16 =<< flip BS.fromString BS.Hex "12345678123456781234567812345678"
+          elem = unsafePartial $ fromJust $ fromByteString s2 =<< flip BS.fromString BS.Hex "1234"
           bytes2s = [elem :< elem :< elem :< elem :< nilVector, elem :< elem :< elem :< elem :< nilVector]
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just complexStorage

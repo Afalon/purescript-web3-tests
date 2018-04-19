@@ -7,8 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "rm -f generator.js ; ./node_modules/.bin/pulp test",
-    "truffle": "./node_modules/.bin/truffle deploy --network=localhost",
+    "test": "rm -f generator.js ; pulp test",
+    "truffle": "truffle deploy --network=localhost",
     "pulp": "bower i; pulp build",
     "generator": "pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true",
     "postinstall": "npm run pulp"
