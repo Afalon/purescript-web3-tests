@@ -7,13 +7,13 @@ install:
 	npm install
 
 build:
-	pulp build
+	./node_modules/.bin/pulp build
 
 compile-contracts:
-	pulp build --src-path compile -m Compile --to compile.js && node compile.js --log-level info; rm compile.js
+	./node_modules/.bin/pulp build --src-path compile -m Compile --to compile.js && node compile.js --log-level info; rm compile.js
 
 deploy: compile-contracts build
-	pulp run
+	./node_modules/.bin/pulp run
 
 test:
-	pulp test
+	./node_modules/.bin/pulp test

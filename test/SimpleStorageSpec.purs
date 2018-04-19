@@ -5,10 +5,10 @@ import Prelude
 import Chanterelle.Test (TestConfig)
 import Contracts.SimpleStorage as SimpleStorage
 import Control.Monad.Aff (delay, joinFiber)
-import Control.Monad.Aff.AVar (makeEmptyVar, putVar, takeVar)
+import Control.Monad.Aff.AVar (AVAR, makeEmptyVar, putVar, takeVar)
 import Control.Monad.Aff.Class (liftAff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (log)
+import Control.Monad.Eff.Console (log, CONSOLE)
 import Control.Monad.Reader (ask)
 import Data.Array ((!!), (:))
 import Data.Either (fromRight)
@@ -20,8 +20,9 @@ import Data.Set (fromFoldable)
 import Data.Time.Duration (Milliseconds(..))
 import Data.Traversable (traverse, sum)
 import Network.Ethereum.Core.BigNumber (unsafeToInt)
-import Network.Ethereum.Web3 (unUIntN, forkWeb3, runWeb3, EventAction(..), event, ChainCursor(..), _fromBlock, _toBlock, embed, eventFilter, uIntNFromBigNumber, Change(..), _from, _to, defaultTransactionOptions, Address)
+import Network.Ethereum.Web3 (ETH, Address, ChainCursor(BN, Latest), Change(Change), EventAction(ContinueEvent, TerminateEvent), _from, _fromBlock, _to, _toBlock, defaultTransactionOptions, embed, event, eventFilter, forkWeb3, runWeb3, uIntNFromBigNumber, unUIntN)
 import Network.Ethereum.Web3.Api (eth_blockNumber)
+import Network.Ethereum.Web3.Solidity.Sizes (s256)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -31,9 +32,9 @@ toNum :: forall a . Semiring a => Int -> a
 toNum n = sum (replicate n one)
 
 simpleStorageSpec
-  :: forall r.
+  :: forall r eff.
      TestConfig (simpleStorage :: Address | r)
-  -> Spec _ Unit
+  -> Spec (avar :: AVAR, eth :: ETH, console :: CONSOLE |eff) Unit
 simpleStorageSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage Contract" do
 
@@ -42,7 +43,7 @@ simpleStorageSpec {provider, accounts, simpleStorage} =
       var <- makeEmptyVar
       bn <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show bn
-      let n = unsafePartial $ fromJust <<< uIntNFromBigNumber <<< embed $ (unsafeToInt <<< unwrap $ bn)
+      let n = unsafePartial $ fromJust <<< uIntNFromBigNumber s256 <<< embed $ (unsafeToInt <<< unwrap $ bn)
           txOptions = defaultTransactionOptions # _from .~ Just primaryAccount
                                                 # _to .~ Just simpleStorage
       hx <- runWeb3 provider $ SimpleStorage.setCount txOptions {_count: n}
@@ -58,9 +59,9 @@ simpleStorageSpec {provider, accounts, simpleStorage} =
       Just val `shouldEqual` Just n
 
 simpleStorageEventsSpec
-  :: forall r.
+  :: forall r eff.
      TestConfig (simpleStorage :: Address | r)
-  -> Spec _ Unit
+  -> Spec (eth :: ETH, avar :: AVAR, console :: CONSOLE |eff) Unit
 simpleStorageEventsSpec {provider, accounts, simpleStorage} =
   describe "interacting with a SimpleStorage events for different block intervals" $ do
 
@@ -72,13 +73,13 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
-      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
+      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed) [1,2,3]
       blockNumberV <- makeEmptyVar
       start <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
       _ <- forkWeb3 provider $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage)  \e@(SimpleStorage.CountSet cs) -> do
         liftEff <<< log $ "Received CountSet event: " <> show e
-        if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
+        if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 3)
           then do
             (Change c) <- ask
             liftAff $ putVar c.blockNumber blockNumberV
@@ -101,7 +102,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar (cs._count : old) var
-          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
+          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
       val <- takeVar var
@@ -115,12 +116,12 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
-      let firstValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
-          secondValues = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [4,5,6]
+      let firstValues = map (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed) [1,2,3]
+          secondValues = map (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed) [4,5,6]
       start <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show start
       f1 <- forkWeb3 provider $ event (eventFilter (Proxy :: Proxy SimpleStorage.CountSet) simpleStorage)  \e@(SimpleStorage.CountSet cs) -> do
-        if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
+        if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 3)
           then pure TerminateEvent
           else pure ContinueEvent
       _ <- traverse (setter simpleStorage primaryAccount) firstValues
@@ -133,7 +134,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
         event filterCountSet $ \e@(SimpleStorage.CountSet cs) -> do
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar (cs._count : old) var
-          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 6)
+          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 6)
              then pure TerminateEvent
              else pure ContinueEvent
       _ <- traverse (setter simpleStorage primaryAccount) secondValues
@@ -150,7 +151,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
-      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [1,2,3]
+      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed) [1,2,3]
       now <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap (unwrap now + embed 3)
@@ -165,7 +166,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar (cs._count : old) var
-          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
+          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
       _ <- runWeb3 provider $ hangOutTillBlock later
@@ -182,7 +183,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
       let primaryAccount = unsafePartial $ fromJust $ accounts !! 0
 
       -- actual test
-      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed) [8,9,10]
+      let values = map (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed) [8,9,10]
       now <- unsafePartial fromRight <$> runWeb3 provider eth_blockNumber
       liftEff <<< log $ "Current blockNumber is: " <> show now
       let later = wrap $ unwrap now + embed 3
@@ -198,7 +199,7 @@ simpleStorageEventsSpec {provider, accounts, simpleStorage} =
           liftEff $ log $ "Received Event: " <> show e
           old <- liftAff $ takeVar var
           _ <- liftAff $ putVar (cs._count : old) var
-          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber <<< embed $ 3)
+          if cs._count == (unsafePartial fromJust <<< uIntNFromBigNumber s256 <<< embed $ 3)
              then pure TerminateEvent
              else pure ContinueEvent
       _ <- runWeb3 provider $ hangOutTillBlock later
