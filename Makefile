@@ -18,5 +18,5 @@ compile-contracts: ## Compile contracts
 deploy: compile-contracts build ## Deploy contracts
 	./node_modules/.bin/pulp run
 
-test: ## Test contracts
+test: compile-contracts ## Test contracts
 	./node_modules/.bin/pulp test
