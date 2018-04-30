@@ -13,7 +13,7 @@ build: ## Builds the application
 	./node_modules/.bin/pulp build
 
 compile-contracts: ## Compile contracts
-	./node_modules/.bin/pulp build --src-path compile -m Compile --to compile.js && node compile.js --log-level info; rm compile.js
+	./node_modules/.bin/pulp build --src-path compile -m Compile --to compile.js && node compile.js --log-level info; rm -f compile.js
 
 deploy: compile-contracts build ## Deploy contracts
 	./node_modules/.bin/pulp run

@@ -5,7 +5,7 @@ node_js: stable
 services:
   - docker
 install:
-  - make
+  - make install
   - make compile-contracts
 script:
   - docker run -d -p 8545:8545 foamspace/cliquebait:latest
