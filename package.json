@@ -10,7 +10,7 @@
     "test": "rm -f generator.js ; pulp test",
     "truffle": "truffle deploy --network=localhost",
     "pulp": "bower i; pulp build",
-    "generator": "pulp build -m Generator --to generator.js && node generator.js --abis build/contracts --dest src --truffle true",
+    "generator": "pulp run -m Generator --abis build/contracts --dest src --truffle true",
     "postinstall": "bower i"
   },
   "author": "",
@@ -22,7 +22,7 @@
     "keccak": "^1.0.2",
     "mkdirp": "^0.5.1",
     "pulp": "^12.0.1",
-    "purescript": "^0.11.7",
+    "purescript": "^0.12.0",
     "rlp": "^2.0.0",
     "secp256k1": "^3.0.1",
     "solc": "^0.4.21",
