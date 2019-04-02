@@ -7,17 +7,14 @@ import Contracts.SimpleErrorTest as SimpleErrorTest
 import Data.Either (Either(..), fromRight, isLeft)
 import Data.Lens.Setter ((?~))
 import Data.Maybe (fromJust)
-import Network.Ethereum.Web3 (ETH, Address, ChainCursor(Latest), _to, defaultTransactionOptions, runWeb3, uIntNFromBigNumber)
+import Network.Ethereum.Web3 (Address, ChainCursor(Latest), _to, defaultTransactionOptions, runWeb3, uIntNFromBigNumber)
 import Network.Ethereum.Web3.Solidity.Sizes (s256)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
 
-simpleErrorSpec
-  :: forall r eff.
-     TestConfig (simpleErrorTest :: Address | r)
-  -> Spec ( eth :: ETH |eff) Unit
+simpleErrorSpec :: forall r. TestConfig (simpleErrorTest :: Address | r) -> Spec Unit
 simpleErrorSpec {provider, accounts, simpleErrorTest} =
   describe "interacting with a SimpleErrorTest contract" do
     it "can raise a left for unset values" $ do

@@ -1,5 +1,10 @@
 .PHONY: install build compile-contracts deploy test
 
+# see https://stackoverflow.com/a/26936855/1798418
+PATH  := node_modules/.bin:$(PATH)
+SHELL := /bin/bash
+
+
 help: ## Ask for help!
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
