@@ -2,11 +2,9 @@ module Main where
 
 import Prelude
 
-import Chanterelle (deployMain)
 import Chanterelle.Deploy (deployContract)
 import Chanterelle.Internal.Types (DeployM, DeployConfig(..))
 import ContractConfig (simpleStorageConfig, mockERC20Config, payableTestConfig, simpleErrorTestConfig, complexStorageConfig)
-import Effect (Effect)
 import Control.Monad.Reader.Class (ask)
 import Data.Lens ((?~))
 import Data.Maybe (fromJust)
@@ -14,8 +12,8 @@ import Network.Ethereum.Web3 (Address, _from, _gas, defaultTransactionOptions)
 import Network.Ethereum.Core.BigNumber (parseBigNumber, decimal)
 import Partial.Unsafe (unsafePartial)
 
-main :: Effect Unit
-main = deployMain deployScript
+deploy :: DeployM Unit
+deploy = void deployScript
 
 
 type DeployResults =

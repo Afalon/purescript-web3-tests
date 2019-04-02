@@ -6,14 +6,11 @@
     "bower_components",
     "output"
   ],
-  "dependencies": {
-    "purescript-yargs": "^4.0.0"
-  },
   "devDependencies": {
     "purescript-prelude": "^4.0.0",
     "purescript-console": "^4.0.0",
     "purescript-psci-support": "^4.0.0",
     "purescript-spec": "^3.0.0",
-    "purescript-chanterelle": "f-o-a-m/chanterelle#compiler/0.12"
+    "purescript-chanterelle": "f-o-a-m/chanterelle#v2.0.1"
   }
 }

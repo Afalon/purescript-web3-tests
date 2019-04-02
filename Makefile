@@ -12,16 +12,16 @@ all: install
 	@echo prereqs that are newer than install: $?
 
 install: ## Install all dependencies
-	npm install
+	bower install & npm install & wait
 
 build: ## Builds the application
-	./node_modules/.bin/pulp build
+	pulp build
 
 compile-contracts: ## Compile contracts
-	./node_modules/.bin/pulp build --src-path compile -m Compile --to compile.js && node compile.js --log-level info; rm -f compile.js
+	chanterelle build
 
-deploy: compile-contracts build ## Deploy contracts
-	./node_modules/.bin/pulp run
+deploy: ## Deploy contracts
+	chanterelle deploy ./output/Main/index.js
 
-test: compile-contracts ## Test contracts
-	./node_modules/.bin/pulp test
+test: ## Test contracts
+	pulp test
